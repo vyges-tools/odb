@@ -7,7 +7,9 @@ description = "Safe, ergonomic Rust API for OpenROAD's OpenDB (libodb) — read 
 repository = "https://github.com/vyges-tools/odb"
 
 [dependencies]
-vyges-odb-sys = { path = "../vyges-tools-odb-sys" }
+# git so external consumers (e.g. vyges-cli) can pull this crate directly; the [patch]
+# below redirects to the sibling checkout for local development.
+vyges-odb-sys = { git = "https://github.com/vyges-tools/odb-sys.git" }
 cxx = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -15,3 +17,8 @@ serde_json = "1"
 [[bin]]
 name = "insert-eco-buffers"
 path = "src/bin/insert-eco-buffers.rs"
+
+# Local dev: build against the sibling checkout instead of the git version. Ignored by
+# downstream consumers (patches are only honored from the root/workspace manifest).
+[patch."https://github.com/vyges-tools/odb-sys.git"]
+vyges-odb-sys = { path = "../vyges-tools-odb-sys" }
