@@ -1,0 +1,11 @@
+[package]
+name = "vyges-odb"
+version = "0.0.1"
+edition = "2021"
+license = "Apache-2.0"
+description = "Safe, ergonomic Rust API for OpenROAD's OpenDB (libodb) — read + ECO write path."
+repository = "https://github.com/vyges-tools/odb"
+
+[dependencies]
+vyges-odb-sys = { path = "../vyges-tools-odb-sys" }
+cxx = "1"
