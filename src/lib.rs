@@ -9,11 +9,16 @@
 //! (`InsertECOBuffers`). Legalization (incremental routing / detailed placement) is delegated
 //! to the OpenROAD engines separately — this layer only mutates the database.
 
+// The libodb-backed surface (`Db`, `eco`) is unix-only — libodb is not built on non-unix
+// targets. `Error`/`Result` stay cross-platform. See vyges-odb-sys for the rationale.
+#[cfg(unix)]
 use std::path::Path;
-
+#[cfg(unix)]
 use cxx::UniquePtr;
+#[cfg(unix)]
 use vyges_odb_sys as sys;
 
+#[cfg(unix)]
 pub mod eco;
 
 /// Errors from the OpenDB layer or path handling.
@@ -42,15 +47,18 @@ impl From<cxx::Exception> for Error {
 
 pub type Result<T> = std::result::Result<T, Error>;
 
+#[cfg(unix)]
 fn path_str(p: impl AsRef<Path>) -> Result<String> {
     p.as_ref().to_str().map(str::to_owned).ok_or(Error::NonUtf8Path)
 }
 
-/// An OpenDB design database (owns a `dbDatabase` + its logger).
+/// An OpenDB design database (owns a `dbDatabase` + its logger). Unix-only.
+#[cfg(unix)]
 pub struct Db {
     inner: UniquePtr<sys::OdbDb>,
 }
 
+#[cfg(unix)]
 impl Db {
     /// Read a `.odb` file.
     pub fn open(path: impl AsRef<Path>) -> Result<Db> {
