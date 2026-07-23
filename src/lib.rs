@@ -14,6 +14,8 @@ use std::path::Path;
 use cxx::UniquePtr;
 use vyges_odb_sys as sys;
 
+pub mod eco;
+
 /// Errors from the OpenDB layer or path handling.
 #[derive(Debug)]
 pub enum Error {
@@ -85,6 +87,10 @@ impl Db {
     pub fn output_pin(&self, inst: &str) -> String { sys::output_pin(self.r(), inst) }
     /// Net connected to `inst/pin` (empty if unconnected).
     pub fn net_of(&self, inst: &str, pin: &str) -> String { sys::net_of(self.r(), inst, pin) }
+    /// Instance origin `(x, y)` in DBU (`(0, 0)` if not found).
+    pub fn inst_location(&self, inst: &str) -> (i32, i32) {
+        (sys::inst_x(self.r(), inst), sys::inst_y(self.r(), inst))
+    }
 
     // ---- write primitives ----------------------------------------------------
     pub fn create_net(&mut self, name: &str) -> Result<()> {

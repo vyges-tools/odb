@@ -57,6 +57,23 @@ fn insert_buffer_end_to_end() {
 }
 
 #[test]
+fn insert_eco_buffers_step() {
+    use vyges_odb::eco::{insert_eco_buffers, EcoBuffer};
+    let mut db = Db::open(FIXTURE).unwrap();
+    let (n0, m0) = (db.num_insts(), db.num_nets());
+    let buf = db.find_master("buf");
+    let (inst, pin, _driver) = find_driven_input(&db);
+
+    let specs = vec![EcoBuffer { target: format!("{inst}/{pin}"), buffer: buf }];
+    let n = insert_eco_buffers(&mut db, &specs).expect("insert_eco_buffers");
+
+    assert_eq!(n, 1);
+    assert_eq!(db.num_insts(), n0 + 1);
+    assert_eq!(db.num_nets(), m0 + 1);
+    assert_eq!(db.net_of(&inst, &pin), "eco_buffer_0_net");
+}
+
+#[test]
 fn errors_are_typed() {
     let mut db = Db::open(FIXTURE).unwrap();
     assert!(db.create_inst("no_such_master", "x").is_err());
