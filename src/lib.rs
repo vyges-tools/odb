@@ -148,6 +148,11 @@ impl Db {
     pub fn num_obstructions(&self) -> usize { sys::num_obstructions(self.r()) }
     /// Destroy all obstructions; returns the count removed.
     pub fn clear_obstructions(&mut self) -> usize { sys::clear_obstructions(self.r()) }
+    /// Place a port (`bterm`) pin box on `layer` at the given DBU rectangle. Errors on unknown
+    /// bterm/layer.
+    pub fn place_bterm(&mut self, bterm: &str, layer: &str, x1: i32, y1: i32, x2: i32, y2: i32) -> Result<()> {
+        Ok(sys::place_bterm(self.r(), bterm, layer, x1, y1, x2, y2)?)
+    }
     pub fn connect(&mut self, inst: &str, pin: &str, net: &str) -> Result<()> {
         Ok(sys::connect(self.r(), inst, pin, net)?)
     }

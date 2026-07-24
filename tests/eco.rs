@@ -160,6 +160,23 @@ fn obstruction_steps() {
 }
 
 #[test]
+fn custom_io_placement_step() {
+    use vyges_opendb::eco::{custom_io_placement, IoPlacement};
+    let mut db = Db::open(FIXTURE).unwrap();
+    let port = db.bterm_names().into_iter().next().unwrap();
+    let n = custom_io_placement(
+        &mut db,
+        &[IoPlacement { port, layer: "met2".into(), llx: 1_000, lly: 2_000, urx: 1_140, ury: 2_140 }],
+    )
+    .unwrap();
+    assert_eq!(n, 1);
+    // the placed pin survives serialization
+    let out = std::env::temp_dir().join("vyges_opendb_io.odb");
+    db.write(&out).unwrap();
+    Db::open(&out).unwrap();
+}
+
+#[test]
 fn errors_are_typed() {
     let mut db = Db::open(FIXTURE).unwrap();
     assert!(db.create_inst("no_such_master", "x").is_err());

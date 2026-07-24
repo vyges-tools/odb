@@ -62,6 +62,9 @@ commands:
   report-wire-length        --input <f.odb>
                       Print the total routed wire length as JSON (report).
 
+  custom-io-placement       --input <in.odb> --output <out.odb> [--config <cfg.json>]
+                      Place I/O port pins (CUSTOM_IO_PLACEMENT in the config).
+
   --version, -V       Print the version.
   --help,    -h       Print this help.
 ";
@@ -90,6 +93,7 @@ fn run() -> Result<(), Fail> {
         "remove-obstructions" => remove_obstructions(args),
         "write-verilog-header" => write_verilog_header(args),
         "report-wire-length" => report_wire_length(args),
+        "custom-io-placement" => custom_io_placement(args),
         "-V" | "--version" => {
             println!("vyges-opendb {}", env!("CARGO_PKG_VERSION"));
             Ok(())
@@ -728,5 +732,68 @@ fn report_wire_length(mut args: impl Iterator<Item = String>) -> Result<(), Fail
     let input = input.ok_or("report-wire-length: --input <f.odb> required")?;
     let total = Db::open(&input)?.total_wire_length();
     println!("{{ \"total_wire_length_dbu\": {total} }}");
+    Ok(())
+}
+
+#[derive(Deserialize, Default)]
+struct IoPlacementConfig {
+    #[serde(rename = "CUSTOM_IO_PLACEMENT", default)]
+    custom_io_placement: Vec<eco::IoPlacement>,
+}
+
+const CUSTOM_IO_PLACEMENT_DESCRIBE: &str = r#"{
+  "step": "custom-io-placement",
+  "summary": "Place I/O port pins at fixed locations/layers in a .odb (database surgery).",
+  "librelane_equivalent": "Odb.CustomIOPlacement",
+  "unix_only": true,
+  "args": [
+    { "name": "--input",  "kind": "input",  "type": "path", "required": true,  "description": "input .odb design" },
+    { "name": "--output", "kind": "output", "type": "path", "required": true,  "description": "output .odb" },
+    { "name": "--config", "kind": "config", "type": "path", "required": false, "description": "JSON with CUSTOM_IO_PLACEMENT (default: no-op)" }
+  ],
+  "config_schema": {
+    "CUSTOM_IO_PLACEMENT": {
+      "type": "array",
+      "item": {
+        "port":  { "type": "string",  "description": "port (bterm) name" },
+        "layer": { "type": "string",  "description": "tech layer, e.g. met3" },
+        "llx":   { "type": "integer", "description": "lower-left x (DBU)" },
+        "lly":   { "type": "integer", "description": "lower-left y (DBU)" },
+        "urx":   { "type": "integer", "description": "upper-right x (DBU)" },
+        "ury":   { "type": "integer", "description": "upper-right y (DBU)" }
+      }
+    }
+  }
+}"#;
+
+/// `custom-io-placement --input <in.odb> --output <out.odb> [--config <cfg.json>] | --describe`.
+fn custom_io_placement(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
+    let (mut input, mut output, mut config) = (None, None, None);
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--input" | "-i" => input = args.next(),
+            "--output" | "-o" => output = args.next(),
+            "--config" | "-c" => config = args.next(),
+            "--describe" => {
+                println!("{CUSTOM_IO_PLACEMENT_DESCRIBE}");
+                return Ok(());
+            }
+            "-h" | "--help" => {
+                eprintln!("usage: vyges-opendb custom-io-placement --input <in.odb> --output <out.odb> --config <cfg.json>");
+                return Ok(());
+            }
+            other => return Err(format!("custom-io-placement: unknown argument: {other}").into()),
+        }
+    }
+    let input = input.ok_or("custom-io-placement: --input <in.odb> required")?;
+    let output = output.ok_or("custom-io-placement: --output <out.odb> required")?;
+    let cfg: IoPlacementConfig = match config {
+        Some(p) => serde_json::from_str(&std::fs::read_to_string(&p)?)?,
+        None => IoPlacementConfig::default(),
+    };
+    let mut db = Db::open(&input)?;
+    let n = eco::custom_io_placement(&mut db, &cfg.custom_io_placement)?;
+    db.write(&output)?;
+    eprintln!("custom-io-placement: placed {n} port(s), {input} -> {output}");
     Ok(())
 }

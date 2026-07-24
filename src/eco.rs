@@ -143,6 +143,26 @@ pub fn remove_obstructions(db: &mut Db) -> usize {
     db.clear_obstructions()
 }
 
+/// One entry of the `CUSTOM_IO_PLACEMENT` config: a port pin box on a layer (DBU corners).
+#[derive(Debug, Clone, Deserialize)]
+pub struct IoPlacement {
+    pub port: String,
+    pub layer: String,
+    pub llx: i32,
+    pub lly: i32,
+    pub urx: i32,
+    pub ury: i32,
+}
+
+/// Apply `CustomIOPlacement`: place each listed port pin at its rectangle. Returns the count.
+/// Mirrors LibreLane's `Odb.CustomIOPlacement` — fixes specific I/O pin locations/layers.
+pub fn custom_io_placement(db: &mut Db, specs: &[IoPlacement]) -> Result<usize> {
+    for s in specs {
+        db.place_bterm(&s.port, &s.layer, s.llx, s.lly, s.urx, s.ury)?;
+    }
+    Ok(specs.len())
+}
+
 /// The `DIODES_ON_PORTS` config: the diode cell, and optionally specific ports (default: all).
 #[derive(Debug, Clone, Deserialize)]
 pub struct DiodesOnPorts {
