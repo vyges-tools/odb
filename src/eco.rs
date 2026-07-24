@@ -32,3 +32,29 @@ pub fn insert_eco_buffers(db: &mut Db, specs: &[EcoBuffer]) -> Result<usize> {
     }
     Ok(specs.len())
 }
+
+/// One entry of the `INSERT_ECO_DIODES` config — the LibreLane-compatible shape.
+#[derive(Debug, Clone, Deserialize)]
+pub struct EcoDiode {
+    /// `"instance/pin"` — the pin whose net gets an antenna diode.
+    pub target: String,
+    /// Antenna-diode master cell name.
+    pub diode: String,
+}
+
+/// Apply `InsertECODiodes`: for each spec, tie its antenna diode onto the target pin's net,
+/// placing the diode at the target instance's location. Returns the number of diodes inserted.
+///
+/// Mirrors LibreLane's `Odb.InsertECODiodes` database surgery — a diode is a leaf tied onto an
+/// existing net (no rewiring, unlike a buffer). Downstream legalization is a separate engine step.
+pub fn insert_eco_diodes(db: &mut Db, specs: &[EcoDiode]) -> Result<usize> {
+    for (i, spec) in specs.iter().enumerate() {
+        let (inst, pin) = spec.target.split_once('/').ok_or_else(|| {
+            Error::Odb(format!("bad target '{}' (expected inst/pin)", spec.target))
+        })?;
+        let (x, y) = db.inst_location(inst);
+        let name = format!("eco_diode_{i}");
+        db.insert_diode(inst, pin, &spec.diode, &name, x, y)?;
+    }
+    Ok(specs.len())
+}

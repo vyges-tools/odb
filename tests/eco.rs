@@ -74,8 +74,36 @@ fn insert_eco_buffers_step() {
 }
 
 #[test]
+fn insert_eco_diodes_step() {
+    use vyges_opendb::eco::{insert_eco_diodes, EcoDiode};
+    let mut db = Db::open(FIXTURE).unwrap();
+    let (n0, m0) = (db.num_insts(), db.num_nets());
+    // a diode cell if the fixture libs have one; otherwise any cell with an input pin — this
+    // exercises the tie-onto-net mechanism, which is what distinguishes a diode from a buffer.
+    let mut cell = db.find_master("diode");
+    if cell.is_empty() {
+        cell = db.find_master("buf");
+    }
+    assert!(!cell.is_empty(), "no diode/buf master in fixture libs");
+    let (inst, pin, driver) = find_driven_input(&db);
+
+    let specs = vec![EcoDiode { target: format!("{inst}/{pin}"), diode: cell }];
+    let n = insert_eco_diodes(&mut db, &specs).expect("insert_eco_diodes");
+
+    assert_eq!(n, 1);
+    // one new inst, and NO new net — a diode is a leaf tied onto the existing net
+    assert_eq!(db.num_insts(), n0 + 1);
+    assert_eq!(db.num_nets(), m0);
+    // the target pin's net is UNCHANGED (no rewiring), and the diode's pin joined that same net
+    assert_eq!(db.net_of(&inst, &pin), driver);
+    let dp = db.input_pin("eco_diode_0");
+    assert_eq!(db.net_of("eco_diode_0", &dp), driver);
+}
+
+#[test]
 fn errors_are_typed() {
     let mut db = Db::open(FIXTURE).unwrap();
     assert!(db.create_inst("no_such_master", "x").is_err());
     assert!(db.insert_buffer("no_inst", "A", "no_master", "b", 0, 0).is_err());
+    assert!(db.insert_diode("no_inst", "A", "no_master", "d", 0, 0).is_err());
 }

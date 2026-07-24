@@ -152,4 +152,35 @@ impl Db {
         self.connect(target_inst, target_pin, &new_net)?; // target pin -> new net
         Ok(())
     }
+
+    /// Tie an antenna diode (`diode_master`, named `diode_name`, placed at `x,y`) onto the net at
+    /// `target_inst/target_pin`.
+    ///
+    /// Unlike [`insert_buffer`](Self::insert_buffer), a diode is a **leaf**: its single antenna pin
+    /// joins the *existing* net — no new net, no rewiring, the original connectivity is unchanged.
+    /// This is the ECO antenna-fix primitive (LibreLane `Odb.InsertECODiodes`). Legalization is a
+    /// separate, engine-delegated step.
+    pub fn insert_diode(
+        &mut self,
+        target_inst: &str,
+        target_pin: &str,
+        diode_master: &str,
+        diode_name: &str,
+        x: i32,
+        y: i32,
+    ) -> Result<()> {
+        let net = self.net_of(target_inst, target_pin);
+        if net.is_empty() {
+            return Err(Error::Odb(format!("no net on {target_inst}/{target_pin}")));
+        }
+        self.create_inst(diode_master, diode_name)?;
+        self.set_inst_location(diode_name, x, y)?;
+        // A diode cell's antenna pin is its (single) input-signal pin, e.g. sky130 `DIODE`.
+        let pin = self.input_pin(diode_name);
+        if pin.is_empty() {
+            return Err(Error::Odb(format!("{diode_master} has no input pin to tie the diode")));
+        }
+        self.connect(diode_name, &pin, &net)?; // diode antenna pin -> the net being protected
+        Ok(())
+    }
 }
