@@ -38,7 +38,7 @@ jobs:
           # place, so re-enabling is just uncommenting the matrix line.
           - { os: ubuntu-latest,    target: x86_64-unknown-linux-gnu  }
           - { os: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu }
-          # - { os: macos-latest,   target: aarch64-apple-darwin      }   # newest hosted macOS (Apple Silicon), deferred — uncomment to re-enable
+          # - { os: macos-15,       target: aarch64-apple-darwin      }   # Apple Silicon, Xcode 16 — deferred; uncomment to re-enable (macos-latest/Xcode 26.5 breaks fmt 11.0.2)
     steps:
       # Sibling layout: <ws>/vyges-tools-odb + <ws>/vyges-tools-odb-sys, so Cargo.toml's
       # `[patch] vyges-odb-sys = { path = "../vyges-tools-odb-sys" }` resolves on CI.
