@@ -15,6 +15,16 @@ fn registry_is_populated() {
 }
 
 #[test]
+fn registry_covers_the_new_target_classes() {
+    use std::collections::HashSet;
+    let classes: HashSet<&str> = registry::FIELDS.iter().map(|f| f.class).collect();
+    // hierarchy / grouping / region + index-addressed blockage / track-grid
+    for c in ["dbModule", "dbGroup", "dbRegion", "dbBlockage", "dbTrackGrid"] {
+        assert!(classes.contains(c), "{c} should be exposed in the registry");
+    }
+}
+
+#[test]
 fn registry_get_dispatches_all_value_kinds() {
     let db = Db::open(FIXTURE).unwrap();
 

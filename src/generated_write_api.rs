@@ -148,4 +148,9 @@ impl Db {
     pub fn wire_set_property(&mut self, net: &str, jid: i32, property: i32) -> crate::Result<()> { Ok(sys::wire_set_property(self.r(), net, jid, property)?) }
     pub fn box_set_soft(&mut self, idx: usize, value: bool) -> crate::Result<()> { Ok(sys::box_set_soft(self.r(), idx, value)?) }
     pub fn box_set_layer_mask(&mut self, idx: usize, mask: u32) -> crate::Result<()> { Ok(sys::box_set_layer_mask(self.r(), idx, mask)?) }
+    pub fn region_set_invalid(&mut self, region: &str, v: bool) -> crate::Result<()> { Ok(sys::region_set_invalid(self.r(), region, v)?) }
+    pub fn blockage_set_pushed_down(&mut self, idx: usize) -> crate::Result<()> { Ok(sys::blockage_set_pushed_down(self.r(), idx)?) }
+    pub fn blockage_set_soft(&mut self, idx: usize) -> crate::Result<()> { Ok(sys::blockage_set_soft(self.r(), idx)?) }
+    pub fn blockage_set_is_system_reserved(&mut self, idx: usize, is_system_reserved: bool) -> crate::Result<()> { Ok(sys::blockage_set_is_system_reserved(self.r(), idx, is_system_reserved)?) }
+    pub fn blockage_set_max_density(&mut self, idx: usize, max_density: f32) -> crate::Result<()> { Ok(sys::blockage_set_max_density(self.r(), idx, max_density)?) }
 }

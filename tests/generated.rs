@@ -113,6 +113,24 @@ fn generated_row_and_site_accessors() {
 }
 
 #[test]
+fn generated_module_hierarchy_reads() {
+    let db = Db::open(FIXTURE).unwrap();
+    // the fixture's flat design has a top module named after the block — exercises the newly
+    // targeted dbModule class (name round-trip + hierarchy scalars/iterators)
+    let top = db.block_name();
+    assert_eq!(db.module_get_name(&top), top);
+    assert!(db.module_get_db_inst_count(&top) > 0, "top module should contain instances");
+    // the top module holds the logic cells — a non-empty subset of all block insts (physical-only
+    // cells like fillers/tapcells live in the block but not the logical module).
+    let mod_insts = db.module_get_insts(&top).len();
+    assert!(
+        mod_insts > 0 && mod_insts <= db.num_insts(),
+        "top module insts ({mod_insts}) should be a non-empty subset of {} block insts",
+        db.num_insts()
+    );
+}
+
+#[test]
 fn generated_struct_geometry_subfields() {
     let db = Db::open(FIXTURE).unwrap();
     // a Rect getter (block die area) expands into x_min/y_min/x_max/y_max/dx/dy scalar sub-fields
