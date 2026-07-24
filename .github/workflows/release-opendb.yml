@@ -55,11 +55,11 @@ jobs:
         # Boost (headers) + zlib only; fmt/spdlog/abseil are built from source by libodb's build.
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake g++ git libboost-dev zlib1g-dev
+          sudo apt-get install -y cmake g++ git bison libboost-dev zlib1g-dev
 
       - name: Toolchain (macOS)
         if: runner.os == 'macOS'
-        run: brew install cmake boost
+        run: brew install cmake boost bison   # bison for the LEF/DEF parsers
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -68,7 +68,10 @@ jobs:
       - name: Build (release; libodb built from source, static)
         # No --locked: Cargo.lock is gitignored in this repo, and the [patch] resolves
         # vyges-opendb-lib to the freshly-checked-out opendb-lib@main sibling — let Cargo resolve.
-        run: cargo build --release --bin vyges-opendb
+        # macOS: put the (keg-only, newer) brew bison ahead of the 2.x system one for the LEF/DEF parsers.
+        run: |
+          [ "${{ runner.os }}" = "macOS" ] && export PATH="$(brew --prefix bison)/bin:$PATH"
+          cargo build --release --bin vyges-opendb
 
       - name: Package vyges-opendb-${{ matrix.target }}.tar.gz
         id: pkg
