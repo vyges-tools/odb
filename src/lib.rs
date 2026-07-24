@@ -99,6 +99,18 @@ impl Db {
     pub fn inst_location(&self, inst: &str) -> (i32, i32) {
         (sys::inst_x(self.r(), inst), sys::inst_y(self.r(), inst))
     }
+    /// Name of the `i`-th block port (bterm); empty if out of range.
+    pub fn nth_bterm_name(&self, i: usize) -> String { sys::nth_bterm_name(self.r(), i) }
+    /// All block port (bterm) names.
+    pub fn bterm_names(&self) -> Vec<String> {
+        (0..self.num_bterms()).map(|i| self.nth_bterm_name(i)).collect()
+    }
+    /// Net connected to block port `bterm` (empty if none).
+    pub fn bterm_net(&self, bterm: &str) -> String { sys::bterm_net(self.r(), bterm) }
+    /// Port first-pin origin `(x, y)` in DBU (`(0, 0)` if none).
+    pub fn bterm_location(&self, bterm: &str) -> (i32, i32) {
+        (sys::bterm_x(self.r(), bterm), sys::bterm_y(self.r(), bterm))
+    }
 
     // ---- write primitives ----------------------------------------------------
     pub fn create_net(&mut self, name: &str) -> Result<()> {
@@ -177,6 +189,19 @@ impl Db {
         if net.is_empty() {
             return Err(Error::Odb(format!("no net on {target_inst}/{target_pin}")));
         }
+        self.insert_diode_on_net(&net, diode_master, diode_name, x, y)
+    }
+
+    /// Tie an antenna diode onto a named `net` directly (the leaf-tie primitive behind
+    /// [`insert_diode`](Self::insert_diode); used for port diodes where the net is known).
+    pub fn insert_diode_on_net(
+        &mut self,
+        net: &str,
+        diode_master: &str,
+        diode_name: &str,
+        x: i32,
+        y: i32,
+    ) -> Result<()> {
         self.create_inst(diode_master, diode_name)?;
         self.set_inst_location(diode_name, x, y)?;
         // A diode cell's antenna pin is its (single) input-signal pin, e.g. sky130 `DIODE`.
@@ -184,7 +209,7 @@ impl Db {
         if pin.is_empty() {
             return Err(Error::Odb(format!("{diode_master} has no input pin to tie the diode")));
         }
-        self.connect(diode_name, &pin, &net)?; // diode antenna pin -> the net being protected
+        self.connect(diode_name, &pin, net)?; // diode antenna pin -> the net being protected
         Ok(())
     }
 }

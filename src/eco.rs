@@ -98,3 +98,35 @@ pub fn manual_macro_placement(db: &mut Db, specs: &[MacroPlacement]) -> Result<u
     }
     Ok(specs.len())
 }
+
+/// The `DIODES_ON_PORTS` config: the diode cell, and optionally specific ports (default: all).
+#[derive(Debug, Clone, Deserialize)]
+pub struct DiodesOnPorts {
+    /// Antenna-diode master cell name.
+    pub diode: String,
+    /// Specific port (bterm) names; empty = every port that carries a net.
+    #[serde(default)]
+    pub ports: Vec<String>,
+}
+
+/// Apply `DiodesOnPorts`: tie an antenna diode onto each selected port's net, placed at the
+/// port's first-pin location. Returns the number of diodes inserted (unconnected ports skipped).
+/// Mirrors LibreLane's `Odb.DiodesOnPorts` — blanket antenna protection on I/O ports.
+pub fn diodes_on_ports(db: &mut Db, spec: &DiodesOnPorts) -> Result<usize> {
+    let ports = if spec.ports.is_empty() {
+        db.bterm_names()
+    } else {
+        spec.ports.clone()
+    };
+    let mut n = 0;
+    for (i, port) in ports.iter().enumerate() {
+        let net = db.bterm_net(port);
+        if net.is_empty() {
+            continue; // unconnected port — nothing to protect
+        }
+        let (x, y) = db.bterm_location(port);
+        db.insert_diode_on_net(&net, &spec.diode, &format!("port_diode_{i}"), x, y)?;
+        n += 1;
+    }
+    Ok(n)
+}

@@ -130,6 +130,24 @@ fn manual_placement_steps() {
 }
 
 #[test]
+fn diodes_on_ports_step() {
+    use vyges_opendb::eco::{diodes_on_ports, DiodesOnPorts};
+    let mut db = Db::open(FIXTURE).unwrap();
+    let (n0, m0) = (db.num_insts(), db.num_nets());
+    let mut diode = db.find_master("diode");
+    if diode.is_empty() {
+        diode = db.find_master("buf");
+    }
+    assert!(!diode.is_empty());
+
+    let n = diodes_on_ports(&mut db, &DiodesOnPorts { diode, ports: vec![] }).unwrap();
+    assert!(n > 0, "expected a diode on each connected port");
+    // one new inst per diode, and NO new nets (each diode is a leaf tied onto the port's net)
+    assert_eq!(db.num_insts(), n0 + n);
+    assert_eq!(db.num_nets(), m0);
+}
+
+#[test]
 fn errors_are_typed() {
     let mut db = Db::open(FIXTURE).unwrap();
     assert!(db.create_inst("no_such_master", "x").is_err());

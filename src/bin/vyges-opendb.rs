@@ -38,6 +38,9 @@ commands:
   manual-macro-placement   --input <in.odb> --output <out.odb> [--config <cfg.json>]
                       Place + orient macros (MANUAL_MACRO_PLACEMENT in the config).
 
+  diodes-on-ports     --input <in.odb> --output <out.odb> [--config <cfg.json>]
+                      Tie antenna diodes onto I/O port nets (DIODES_ON_PORTS in the config).
+
   --version, -V       Print the version.
   --help,    -h       Print this help.
 ";
@@ -58,6 +61,7 @@ fn run() -> Result<(), Fail> {
         "insert-eco-diodes" => insert_eco_diodes(args),
         "manual-global-placement" => manual_global_placement(args),
         "manual-macro-placement" => manual_macro_placement(args),
+        "diodes-on-ports" => diodes_on_ports(args),
         "-V" | "--version" => {
             println!("vyges-opendb {}", env!("CARGO_PKG_VERSION"));
             Ok(())
@@ -344,5 +348,69 @@ fn manual_macro_placement(mut args: impl Iterator<Item = String>) -> Result<(), 
     let n = eco::manual_macro_placement(&mut db, &cfg.manual_macro_placement)?;
     db.write(&output)?;
     eprintln!("manual-macro-placement: placed {n} macro(s), {input} -> {output}");
+    Ok(())
+}
+
+#[derive(Deserialize, Default)]
+struct DiodesOnPortsConfig {
+    #[serde(rename = "DIODES_ON_PORTS")]
+    diodes_on_ports: Option<eco::DiodesOnPorts>,
+}
+
+const DIODES_ON_PORTS_DESCRIBE: &str = r#"{
+  "step": "diodes-on-ports",
+  "summary": "Tie antenna diodes onto I/O port nets in a placed .odb (database surgery).",
+  "librelane_equivalent": "Odb.DiodesOnPorts",
+  "unix_only": true,
+  "args": [
+    { "name": "--input",  "kind": "input",  "type": "path", "required": true,  "description": "input .odb design" },
+    { "name": "--output", "kind": "output", "type": "path", "required": true,  "description": "output .odb after ECO" },
+    { "name": "--config", "kind": "config", "type": "path", "required": false, "description": "JSON with DIODES_ON_PORTS (default: no-op)" }
+  ],
+  "config_schema": {
+    "DIODES_ON_PORTS": {
+      "type": "object",
+      "description": "tie an antenna diode onto each selected port's net",
+      "item": {
+        "diode": { "type": "string", "description": "antenna-diode master, e.g. sky130_fd_sc_hd__diode_2" },
+        "ports": { "type": "array",  "description": "specific port names; omitted/empty = all ports" }
+      }
+    }
+  }
+}"#;
+
+/// `diodes-on-ports --input <in.odb> --output <out.odb> [--config <cfg.json>] | --describe`.
+fn diodes_on_ports(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
+    let (mut input, mut output, mut config) = (None, None, None);
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--input" | "-i" => input = args.next(),
+            "--output" | "-o" => output = args.next(),
+            "--config" | "-c" => config = args.next(),
+            "--describe" => {
+                println!("{DIODES_ON_PORTS_DESCRIBE}");
+                return Ok(());
+            }
+            "-h" | "--help" => {
+                eprintln!("usage: vyges-opendb diodes-on-ports --input <in.odb> --output <out.odb> --config <cfg.json>");
+                return Ok(());
+            }
+            other => return Err(format!("diodes-on-ports: unknown argument: {other}").into()),
+        }
+    }
+    let input = input.ok_or("diodes-on-ports: --input <in.odb> required")?;
+    let output = output.ok_or("diodes-on-ports: --output <out.odb> required")?;
+    let cfg: DiodesOnPortsConfig = match config {
+        Some(p) => serde_json::from_str(&std::fs::read_to_string(&p)?)?,
+        None => DiodesOnPortsConfig::default(),
+    };
+
+    let mut db = Db::open(&input)?;
+    let n = match &cfg.diodes_on_ports {
+        Some(spec) => eco::diodes_on_ports(&mut db, spec)?,
+        None => 0,
+    };
+    db.write(&output)?;
+    eprintln!("diodes-on-ports: inserted {n} diode(s), {input} -> {output}");
     Ok(())
 }
