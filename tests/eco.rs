@@ -177,6 +177,16 @@ fn custom_io_placement_step() {
 }
 
 #[test]
+fn write_def_exports_the_design() {
+    let db = Db::open(FIXTURE).unwrap();
+    let out = std::env::temp_dir().join("vyges_opendb_out.def");
+    db.write_def(&out).unwrap();
+    let def = std::fs::read_to_string(&out).unwrap();
+    assert!(def.contains("DESIGN counter"), "DEF should name the design; got:\n{}", &def[..def.len().min(200)]);
+    assert!(def.contains("END DESIGN"));
+}
+
+#[test]
 fn errors_are_typed() {
     let mut db = Db::open(FIXTURE).unwrap();
     assert!(db.create_inst("no_such_master", "x").is_err());

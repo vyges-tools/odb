@@ -65,6 +65,9 @@ commands:
   custom-io-placement       --input <in.odb> --output <out.odb> [--config <cfg.json>]
                       Place I/O port pins (CUSTOM_IO_PLACEMENT in the config).
 
+  write-def                 --input <f.odb> --output <f.def>
+                      Export the design to a DEF 5.8 file (libodb v1 LEF/DEF I/O).
+
   --version, -V       Print the version.
   --help,    -h       Print this help.
 ";
@@ -94,6 +97,7 @@ fn run() -> Result<(), Fail> {
         "write-verilog-header" => write_verilog_header(args),
         "report-wire-length" => report_wire_length(args),
         "custom-io-placement" => custom_io_placement(args),
+        "write-def" => write_def(args),
         "-V" | "--version" => {
             println!("vyges-opendb {}", env!("CARGO_PKG_VERSION"));
             Ok(())
@@ -795,5 +799,41 @@ fn custom_io_placement(mut args: impl Iterator<Item = String>) -> Result<(), Fai
     let n = eco::custom_io_placement(&mut db, &cfg.custom_io_placement)?;
     db.write(&output)?;
     eprintln!("custom-io-placement: placed {n} port(s), {input} -> {output}");
+    Ok(())
+}
+
+const WRITE_DEF_DESCRIBE: &str = r#"{
+  "step": "write-def",
+  "summary": "Export a placed design to a DEF 5.8 file (libodb v1 LEF/DEF I/O).",
+  "librelane_equivalent": "odb write_def",
+  "unix_only": true,
+  "args": [
+    { "name": "--input",  "kind": "input",  "type": "path", "required": true, "description": "input .odb design" },
+    { "name": "--output", "kind": "output", "type": "path", "required": true, "description": "output .def file" }
+  ]
+}"#;
+
+/// `write-def --input <f.odb> --output <f.def> | --describe`.
+fn write_def(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
+    let (mut input, mut output) = (None, None);
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--input" | "-i" => input = args.next(),
+            "--output" | "-o" => output = args.next(),
+            "--describe" => {
+                println!("{WRITE_DEF_DESCRIBE}");
+                return Ok(());
+            }
+            "-h" | "--help" => {
+                eprintln!("usage: vyges-opendb write-def --input <f.odb> --output <f.def>");
+                return Ok(());
+            }
+            other => return Err(format!("write-def: unknown argument: {other}").into()),
+        }
+    }
+    let input = input.ok_or("write-def: --input <f.odb> required")?;
+    let output = output.ok_or("write-def: --output <f.def> required")?;
+    Db::open(&input)?.write_def(&output)?;
+    eprintln!("write-def: {input} -> {output}");
     Ok(())
 }

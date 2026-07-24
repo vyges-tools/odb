@@ -73,6 +73,11 @@ impl Db {
         Ok(sys::write_db(self.r(), &path_str(path)?)?)
     }
 
+    /// Export the design to a DEF file (libodb v1 — DEF 5.8).
+    pub fn write_def(&self, path: impl AsRef<Path>) -> Result<()> {
+        Ok(sys::write_def(self.r(), &path_str(path)?)?)
+    }
+
     fn r(&self) -> &sys::OdbDb {
         self.inner.as_ref().expect("vyges-opendb: null db handle")
     }
