@@ -12,7 +12,7 @@
 //! Arg parsing is deliberately hand-rolled (no clap) to match the rest of the suite and keep
 //! the dependency surface minimal.
 use serde::Deserialize;
-use vyges_opendb::{eco, Db};
+use vyges_opendb::{eco, report, Db};
 
 type Fail = Box<dyn std::error::Error>;
 
@@ -41,6 +41,12 @@ commands:
   diodes-on-ports     --input <in.odb> --output <out.odb> [--config <cfg.json>]
                       Tie antenna diodes onto I/O port nets (DIODES_ON_PORTS in the config).
 
+  cell-frequency-tables     --input <f.odb>
+                      Print a JSON table of instance count per master cell (report).
+
+  report-disconnected-pins  --input <f.odb>
+                      Print a JSON list of pins/ports with no net (report).
+
   --version, -V       Print the version.
   --help,    -h       Print this help.
 ";
@@ -62,6 +68,8 @@ fn run() -> Result<(), Fail> {
         "manual-global-placement" => manual_global_placement(args),
         "manual-macro-placement" => manual_macro_placement(args),
         "diodes-on-ports" => diodes_on_ports(args),
+        "cell-frequency-tables" => cell_frequency_tables(args),
+        "report-disconnected-pins" => report_disconnected_pins(args),
         "-V" | "--version" => {
             println!("vyges-opendb {}", env!("CARGO_PKG_VERSION"));
             Ok(())
@@ -412,5 +420,75 @@ fn diodes_on_ports(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
     };
     db.write(&output)?;
     eprintln!("diodes-on-ports: inserted {n} diode(s), {input} -> {output}");
+    Ok(())
+}
+
+const CELL_FREQUENCY_TABLES_DESCRIBE: &str = r#"{
+  "step": "cell-frequency-tables",
+  "summary": "Report instance count per master cell as JSON (read-only).",
+  "librelane_equivalent": "Odb.CellFrequencyTables",
+  "unix_only": true,
+  "args": [
+    { "name": "--input", "kind": "input", "type": "path", "required": true, "description": "input .odb design" }
+  ],
+  "output": "JSON array of { master, count } on stdout, most-used first"
+}"#;
+
+/// `cell-frequency-tables --input <f.odb> | --describe` — read-only report to stdout (JSON).
+fn cell_frequency_tables(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
+    let mut input = None;
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--input" | "-i" => input = args.next(),
+            "--describe" => {
+                println!("{CELL_FREQUENCY_TABLES_DESCRIBE}");
+                return Ok(());
+            }
+            "-h" | "--help" => {
+                eprintln!("usage: vyges-opendb cell-frequency-tables --input <f.odb>");
+                return Ok(());
+            }
+            other => return Err(format!("cell-frequency-tables: unknown argument: {other}").into()),
+        }
+    }
+    let input = input.ok_or("cell-frequency-tables: --input <f.odb> required")?;
+    let db = Db::open(&input)?;
+    println!("{}", serde_json::to_string_pretty(&report::cell_frequency_table(&db))?);
+    Ok(())
+}
+
+const REPORT_DISCONNECTED_PINS_DESCRIBE: &str = r#"{
+  "step": "report-disconnected-pins",
+  "summary": "Report instance pins + ports that carry no net, as JSON (read-only).",
+  "librelane_equivalent": "Odb.ReportDisconnectedPins",
+  "unix_only": true,
+  "args": [
+    { "name": "--input", "kind": "input", "type": "path", "required": true, "description": "input .odb design" }
+  ],
+  "output": "JSON array of strings on stdout: \"inst/pin\" and \"port:name\""
+}"#;
+
+/// `report-disconnected-pins --input <f.odb> | --describe` — read-only report to stdout (JSON).
+fn report_disconnected_pins(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
+    let mut input = None;
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--input" | "-i" => input = args.next(),
+            "--describe" => {
+                println!("{REPORT_DISCONNECTED_PINS_DESCRIBE}");
+                return Ok(());
+            }
+            "-h" | "--help" => {
+                eprintln!("usage: vyges-opendb report-disconnected-pins --input <f.odb>");
+                return Ok(());
+            }
+            other => return Err(format!("report-disconnected-pins: unknown argument: {other}").into()),
+        }
+    }
+    let input = input.ok_or("report-disconnected-pins: --input <f.odb> required")?;
+    let db = Db::open(&input)?;
+    let pins = report::disconnected_pins(&db);
+    eprintln!("report-disconnected-pins: {} disconnected", pins.len());
+    println!("{}", serde_json::to_string_pretty(&pins)?);
     Ok(())
 }

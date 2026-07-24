@@ -20,6 +20,8 @@ use vyges_opendb_lib as sys;
 
 #[cfg(unix)]
 pub mod eco;
+#[cfg(unix)]
+pub mod report;
 
 /// Errors from the OpenDB layer or path handling.
 #[derive(Debug)]
@@ -110,6 +112,14 @@ impl Db {
     /// Port first-pin origin `(x, y)` in DBU (`(0, 0)` if none).
     pub fn bterm_location(&self, bterm: &str) -> (i32, i32) {
         (sys::bterm_x(self.r(), bterm), sys::bterm_y(self.r(), bterm))
+    }
+    /// The master cell name of `inst` (empty if not found).
+    pub fn inst_master(&self, inst: &str) -> String { sys::inst_master(self.r(), inst) }
+    /// All pin (iterm) names of `inst`.
+    pub fn iterm_names(&self, inst: &str) -> Vec<String> {
+        (0..sys::num_iterms(self.r(), inst))
+            .map(|i| sys::nth_iterm_name(self.r(), inst, i))
+            .collect()
     }
 
     // ---- write primitives ----------------------------------------------------
