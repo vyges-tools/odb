@@ -277,6 +277,13 @@ impl Db {
 #[cfg(unix)]
 include!("generated_api.rs");
 
+// Runtime registry over the generated surface: field discovery + get/set dispatch (drives the
+// generic `get`/`set`/`fields` CLI subcommands and, through them, `vyges mcp`).
+#[cfg(unix)]
+pub mod registry {
+    include!("generated_registry.rs");
+}
+
 // Machine-generated setters — a third `impl Db` block, gated behind `gen-write` (L2/write).
 #[cfg(all(unix, feature = "gen-write"))]
 include!("generated_write_api.rs");

@@ -1,0 +1,72 @@
+// SPDX-License-Identifier: Apache-2.0
+// The runtime registry (generated get/set dispatch) — the surface `vyges mcp` drives by name.
+use vyges_opendb::{registry, Db};
+
+const FIXTURE: &str = "tests/fixtures/counter.odb";
+
+#[test]
+fn registry_is_populated() {
+    // the read surface is large and every entry names a real class + addressing keys
+    assert!(registry::FIELDS.len() > 250, "expected a broad read surface");
+    for f in registry::FIELDS {
+        assert!(f.class.starts_with("db"));
+        assert!(!f.field.is_empty());
+    }
+}
+
+#[test]
+fn registry_get_dispatches_all_value_kinds() {
+    let db = Db::open(FIXTURE).unwrap();
+
+    // string (no keys) — agrees with the hand-written accessor
+    let v = registry::get(&db, "dbBlock", "get_name", &[]).unwrap();
+    assert_eq!(v, serde_json::json!(db.block_name()));
+
+    // enum-string with a str key
+    let net = db.net_names().into_iter().next().unwrap();
+    let v = registry::get(&db, "dbNet", "get_sig_type", &[net.clone()]).unwrap();
+    assert_eq!(v, serde_json::json!(db.net_get_sig_type(&net)));
+
+    // list — length matches the instance count
+    let insts = registry::get(&db, "dbBlock", "get_insts", &[]).unwrap();
+    assert_eq!(insts.as_array().unwrap().len(), db.num_insts());
+
+    // errors are typed, not panics
+    assert!(registry::get(&db, "dbInst", "no_such_field", &[]).is_err());
+    assert!(registry::get(&db, "dbNope", "get_name", &[]).is_err());
+    // a str key where an idx is required (dbBox is index-addressed) → typed error
+    assert!(registry::get(&db, "dbBox", "x_min", &["not_a_number".into()]).is_err());
+}
+
+#[test]
+fn registry_get_index_addressed() {
+    let mut db = Db::open(FIXTURE).unwrap();
+    db.add_obstruction("met1", 1000, 2000, 5000, 8000).unwrap();
+    // an index-addressed dbBox read finds the obstruction bbox we just added
+    let n = db.num_obstructions();
+    let found = (0..n).any(|i| {
+        registry::get(&db, "dbBox", "x_min", &[i.to_string()]).unwrap() == serde_json::json!(1000)
+    });
+    assert!(found, "index-addressed dbBox.x_min should surface the added obstruction");
+}
+
+#[cfg(feature = "gen-write")]
+#[test]
+fn registry_set_dispatches() {
+    let mut db = Db::open(FIXTURE).unwrap();
+    assert!(registry::WRITE_FIELDS.len() > 100, "expected a broad write surface");
+
+    let net = db.net_names().into_iter().next().unwrap();
+    // scalar set via registry (value string-encoded), read back via registry
+    registry::set(&mut db, "dbNet", "set_weight", &[net.clone()], &["7".into()]).unwrap();
+    assert_eq!(registry::get(&db, "dbNet", "get_weight", &[net.clone()]).unwrap(), serde_json::json!(7));
+
+    // enum set via registry (constructed from the string)
+    let inst = db.nth_inst_name(0);
+    registry::set(&mut db, "dbInst", "set_orient", &[inst.clone()], &["MY".into()]).unwrap();
+    assert_eq!(registry::get(&db, "dbInst", "get_orient", &[inst]).unwrap(), serde_json::json!("MY"));
+
+    // bad value + missing object are typed errors
+    assert!(registry::set(&mut db, "dbNet", "set_weight", &[net], &["NaN".into()]).is_err());
+    assert!(registry::set(&mut db, "dbNet", "set_weight", &["no_net".into()], &["1".into()]).is_err());
+}

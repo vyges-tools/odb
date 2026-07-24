@@ -77,6 +77,16 @@ commands:
   apply-def-template        --input <in.odb> --template <f.def> --output <out.odb>
                       Apply a template DEF's floorplan (Odb.ApplyDEFTemplate).
 
+  fields              [--class <dbClass>] [--writable]
+                      List the generated instrumentation fields (discovery; JSON).
+
+  get                 --input <f.odb> --class <dbClass> --field <name> [--key <k>]...
+                      Read any generated field by (class, field) + addressing keys (JSON).
+
+  set                 --input <in.odb> --output <out.odb> --class <dbClass> --field <name>
+                      [--key <k>]... [--value <v>]...
+                      Apply a generated setter (requires a build with --features gen-write).
+
   --version, -V       Print the version.
   --help,    -h       Print this help.
 ";
@@ -110,6 +120,9 @@ fn run() -> Result<(), Fail> {
         "write-def" => write_def(args),
         "read-def" => read_def(args),
         "apply-def-template" => apply_def_template(args),
+        "fields" => fields(args),
+        "get" => get(args),
+        "set" => set(args),
         "-V" | "--version" => {
             println!("vyges-opendb {}", env!("CARGO_PKG_VERSION"));
             Ok(())
@@ -964,4 +977,180 @@ fn apply_def_template(mut args: impl Iterator<Item = String>) -> Result<(), Fail
     db.write(&output)?;
     eprintln!("apply-def-template: {input} + {template} -> {output}");
     Ok(())
+}
+
+// ---- generic instrumentation surface (get / set / fields) --------------------------------
+// Drive the whole machine-generated accessor surface (scripts/generate-bindings.py) by name,
+// so `vyges mcp` reaches it through three stable subcommands instead of hundreds.
+
+const FIELDS_DESCRIBE: &str = r#"{
+  "step": "fields",
+  "summary": "List the generated instrumentation fields (class, field, value/keys) for discovery.",
+  "unix_only": true,
+  "args": [
+    { "name": "--class",    "kind": "filter", "type": "string", "required": false, "description": "restrict to one dbClass" },
+    { "name": "--writable", "kind": "flag",   "type": "bool",   "required": false, "description": "list settable fields (needs gen-write)" }
+  ],
+  "output": "JSON array of { class, field, value|values, keys } on stdout"
+}"#;
+
+const GET_DESCRIBE: &str = r#"{
+  "step": "get",
+  "summary": "Read any generated field by (class, field) with string-encoded addressing keys.",
+  "unix_only": true,
+  "args": [
+    { "name": "--input", "kind": "input",  "type": "path",   "required": true,  "description": "input .odb design" },
+    { "name": "--class", "kind": "select", "type": "string", "required": true,  "description": "dbClass, e.g. dbInst" },
+    { "name": "--field", "kind": "select", "type": "string", "required": true,  "description": "field name, e.g. get_orient" },
+    { "name": "--key",   "kind": "key",    "type": "string", "required": false, "description": "addressing key (repeatable, in order)" }
+  ],
+  "output": "the field value as JSON on stdout"
+}"#;
+
+const SET_DESCRIBE: &str = r#"{
+  "step": "set",
+  "summary": "Apply a generated setter by (class, field). Requires a --features gen-write build (L2/write).",
+  "unix_only": true,
+  "level": "L2",
+  "args": [
+    { "name": "--input",  "kind": "input",  "type": "path",   "required": true,  "description": "input .odb design" },
+    { "name": "--output", "kind": "output", "type": "path",   "required": true,  "description": "output .odb" },
+    { "name": "--class",  "kind": "select", "type": "string", "required": true,  "description": "dbClass" },
+    { "name": "--field",  "kind": "select", "type": "string", "required": true,  "description": "setter field, e.g. set_weight" },
+    { "name": "--key",    "kind": "key",    "type": "string", "required": false, "description": "addressing key (repeatable, in order)" },
+    { "name": "--value",  "kind": "value",  "type": "string", "required": false, "description": "value to set (repeatable, in order)" }
+  ],
+  "output": "writes the edited .odb; a one-line confirmation on stderr"
+}"#;
+
+/// `fields [--class <dbClass>] [--writable] | --describe` — discovery over the generated surface.
+fn fields(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
+    let (mut class, mut writable) = (None, false);
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--class" => class = args.next(),
+            "--writable" => writable = true,
+            "--describe" => {
+                println!("{FIELDS_DESCRIBE}");
+                return Ok(());
+            }
+            "-h" | "--help" => {
+                eprintln!("usage: vyges-opendb fields [--class <dbClass>] [--writable]");
+                return Ok(());
+            }
+            other => return Err(format!("fields: unknown argument: {other}").into()),
+        }
+    }
+    if writable {
+        return list_write_fields(class.as_deref());
+    }
+    let items: Vec<_> = vyges_opendb::registry::FIELDS
+        .iter()
+        .filter(|f| class.as_deref().map_or(true, |c| c == f.class))
+        .map(|f| serde_json::json!({ "class": f.class, "field": f.field, "value": f.value, "keys": f.keys }))
+        .collect();
+    println!("{}", serde_json::to_string_pretty(&items)?);
+    Ok(())
+}
+
+#[cfg(feature = "gen-write")]
+fn list_write_fields(class: Option<&str>) -> Result<(), Fail> {
+    let items: Vec<_> = vyges_opendb::registry::WRITE_FIELDS
+        .iter()
+        .filter(|f| class.map_or(true, |c| c == f.class))
+        .map(|f| serde_json::json!({ "class": f.class, "field": f.field, "values": f.values, "keys": f.keys }))
+        .collect();
+    println!("{}", serde_json::to_string_pretty(&items)?);
+    Ok(())
+}
+
+#[cfg(not(feature = "gen-write"))]
+fn list_write_fields(_class: Option<&str>) -> Result<(), Fail> {
+    Err("writable fields require a build with --features gen-write (L2/write governance gate)".into())
+}
+
+/// `get --input <f.odb> --class <c> --field <f> [--key <k>]... | --describe`.
+fn get(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
+    let (mut input, mut class, mut field, mut keys) = (None, None, None, Vec::new());
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--input" | "-i" => input = args.next(),
+            "--class" => class = args.next(),
+            "--field" => field = args.next(),
+            "--key" => {
+                if let Some(k) = args.next() {
+                    keys.push(k);
+                }
+            }
+            "--describe" => {
+                println!("{GET_DESCRIBE}");
+                return Ok(());
+            }
+            "-h" | "--help" => {
+                eprintln!("usage: vyges-opendb get --input <f.odb> --class <c> --field <f> [--key <k>]...");
+                return Ok(());
+            }
+            other => return Err(format!("get: unknown argument: {other}").into()),
+        }
+    }
+    let input = input.ok_or("get: --input <f.odb> required")?;
+    let class = class.ok_or("get: --class <dbClass> required")?;
+    let field = field.ok_or("get: --field <name> required")?;
+    let db = Db::open(&input)?;
+    let value = vyges_opendb::registry::get(&db, &class, &field, &keys)?;
+    println!("{}", serde_json::to_string_pretty(&value)?);
+    Ok(())
+}
+
+/// `set --input <in.odb> --output <out.odb> --class <c> --field <f> [--key <k>]... [--value <v>]...`
+/// Gated behind `gen-write` (L2/write governance).
+#[cfg(feature = "gen-write")]
+fn set(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
+    let (mut input, mut output, mut class, mut field) = (None, None, None, None);
+    let (mut keys, mut values): (Vec<String>, Vec<String>) = (Vec::new(), Vec::new());
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--input" | "-i" => input = args.next(),
+            "--output" | "-o" => output = args.next(),
+            "--class" => class = args.next(),
+            "--field" => field = args.next(),
+            "--key" => {
+                if let Some(k) = args.next() {
+                    keys.push(k);
+                }
+            }
+            "--value" => {
+                if let Some(v) = args.next() {
+                    values.push(v);
+                }
+            }
+            "--describe" => {
+                println!("{SET_DESCRIBE}");
+                return Ok(());
+            }
+            "-h" | "--help" => {
+                eprintln!("usage: vyges-opendb set --input <in> --output <out> --class <c> --field <f> [--key <k>]... [--value <v>]...");
+                return Ok(());
+            }
+            other => return Err(format!("set: unknown argument: {other}").into()),
+        }
+    }
+    let input = input.ok_or("set: --input <in.odb> required")?;
+    let output = output.ok_or("set: --output <out.odb> required")?;
+    let class = class.ok_or("set: --class <dbClass> required")?;
+    let field = field.ok_or("set: --field <name> required")?;
+    let mut db = Db::open(&input)?;
+    vyges_opendb::registry::set(&mut db, &class, &field, &keys, &values)?;
+    db.write(&output)?;
+    eprintln!("set: {class}.{field} <- {values:?} -> {output}");
+    Ok(())
+}
+
+#[cfg(not(feature = "gen-write"))]
+fn set(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
+    if args.any(|a| a == "--describe") {
+        println!("{SET_DESCRIBE}");
+        return Ok(());
+    }
+    Err("`set` requires a build with --features gen-write (L2/write governance gate)".into())
 }
