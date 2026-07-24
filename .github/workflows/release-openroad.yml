@@ -33,10 +33,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Supported targets only: Linux x86_64/arm64 + macOS Apple Silicon.
+          # Intel Mac (x86_64-apple-darwin) is intentionally NOT built — unsupported.
           - { os: ubuntu-latest,    target: x86_64-unknown-linux-gnu  }
           - { os: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu }
           - { os: macos-14,         target: aarch64-apple-darwin      }
-          - { os: macos-13,         target: x86_64-apple-darwin       }
     steps:
       # Sibling layout: <ws>/vyges-tools-odb + <ws>/vyges-tools-odb-sys, so Cargo.toml's
       # `[patch] vyges-odb-sys = { path = "../vyges-tools-odb-sys" }` resolves on CI.
