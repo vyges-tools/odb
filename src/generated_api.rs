@@ -26,6 +26,7 @@ impl Db {
     pub fn block_get_isolations(&self) -> Vec<String> { (0..sys::num_block_get_isolations(self.r())).map(|i| sys::nth_block_get_isolations(self.r(), i)).collect() }
     pub fn block_get_level_shifters(&self) -> Vec<String> { (0..sys::num_block_get_level_shifters(self.r())).map(|i| sys::nth_block_get_level_shifters(self.r(), i)).collect() }
     pub fn block_get_groups(&self) -> Vec<String> { (0..sys::num_block_get_groups(self.r())).map(|i| sys::nth_block_get_groups(self.r(), i)).collect() }
+    pub fn block_get_component_mask_shift(&self) -> Vec<String> { (0..sys::num_block_get_component_mask_shift(self.r())).map(|i| sys::nth_block_get_component_mask_shift(self.r(), i)).collect() }
     pub fn block_get_nets(&self) -> Vec<String> { (0..sys::num_block_get_nets(self.r())).map(|i| sys::nth_block_get_nets(self.r(), i)).collect() }
     pub fn block_get_vias(&self) -> Vec<String> { (0..sys::num_block_get_vias(self.r())).map(|i| sys::nth_block_get_vias(self.r(), i)).collect() }
     pub fn block_get_def_units(&self) -> i32 { sys::block_get_def_units(self.r()) }
@@ -155,6 +156,12 @@ impl Db {
     pub fn net_find_main_parent_module(&self, net: &str) -> String { sys::net_find_main_parent_module(self.r(), net) }
     pub fn net_has_jumpers(&self, net: &str) -> bool { sys::net_has_jumpers(self.r(), net) }
     pub fn net_find_mod_net_in_highest_hier(&self, net: &str) -> String { sys::net_find_mod_net_in_highest_hier(self.r(), net) }
+    pub fn net_get_wire_count_wire_cnt(&self, net: &str) -> u32 { sys::net_get_wire_count_wire_cnt(self.r(), net) }
+    pub fn net_get_wire_count_via_cnt(&self, net: &str) -> u32 { sys::net_get_wire_count_via_cnt(self.r(), net) }
+    pub fn net_get_signal_wire_count_wire_cnt(&self, net: &str) -> u32 { sys::net_get_signal_wire_count_wire_cnt(self.r(), net) }
+    pub fn net_get_signal_wire_count_via_cnt(&self, net: &str) -> u32 { sys::net_get_signal_wire_count_via_cnt(self.r(), net) }
+    pub fn net_get_power_wire_count_wire_cnt(&self, net: &str) -> u32 { sys::net_get_power_wire_count_wire_cnt(self.r(), net) }
+    pub fn net_get_power_wire_count_via_cnt(&self, net: &str) -> u32 { sys::net_get_power_wire_count_via_cnt(self.r(), net) }
     pub fn bterm_get_name(&self, bterm: &str) -> String { sys::bterm_get_name(self.r(), bterm) }
     pub fn bterm_get_const_name(&self, bterm: &str) -> String { sys::bterm_get_const_name(self.r(), bterm) }
     pub fn bterm_get_b_box_x_min(&self, bterm: &str) -> i32 { sys::bterm_get_b_box_x_min(self.r(), bterm) }
@@ -299,6 +306,10 @@ impl Db {
     pub fn layer_get_upper_layer(&self, layer: &str) -> String { sys::layer_get_upper_layer(self.r(), layer) }
     pub fn layer_get_tech(&self, layer: &str) -> String { sys::layer_get_tech(self.r(), layer) }
     pub fn layer_has_orth_spacing_table(&self, layer: &str) -> bool { sys::layer_has_orth_spacing_table(self.r(), layer) }
+    pub fn layer_get_max_wide_d_r_c_range_owidth(&self, layer: &str) -> i32 { sys::layer_get_max_wide_d_r_c_range_owidth(self.r(), layer) }
+    pub fn layer_get_max_wide_d_r_c_range_olength(&self, layer: &str) -> i32 { sys::layer_get_max_wide_d_r_c_range_olength(self.r(), layer) }
+    pub fn layer_get_min_wide_d_r_c_range_owidth(&self, layer: &str) -> i32 { sys::layer_get_min_wide_d_r_c_range_owidth(self.r(), layer) }
+    pub fn layer_get_min_wide_d_r_c_range_olength(&self, layer: &str) -> i32 { sys::layer_get_min_wide_d_r_c_range_olength(self.r(), layer) }
     pub fn row_get_name(&self, row: &str) -> String { sys::row_get_name(self.r(), row) }
     pub fn row_get_const_name(&self, row: &str) -> String { sys::row_get_const_name(self.r(), row) }
     pub fn row_get_site(&self, row: &str) -> String { sys::row_get_site(self.r(), row) }
@@ -408,6 +419,7 @@ impl Db {
     pub fn module_get_ports(&self, module: &str) -> Vec<String> { (0..sys::num_module_get_ports(self.r(), module)).map(|i| sys::nth_module_get_ports(self.r(), module, i)).collect() }
     pub fn module_get_mod_b_terms(&self, module: &str) -> Vec<String> { (0..sys::num_module_get_mod_b_terms(self.r(), module)).map(|i| sys::nth_module_get_mod_b_terms(self.r(), module, i)).collect() }
     pub fn module_get_insts(&self, module: &str) -> Vec<String> { (0..sys::num_module_get_insts(self.r(), module)).map(|i| sys::nth_module_get_insts(self.r(), module, i)).collect() }
+    pub fn module_get_leaf_insts(&self, module: &str) -> Vec<String> { (0..sys::num_module_get_leaf_insts(self.r(), module)).map(|i| sys::nth_module_get_leaf_insts(self.r(), module, i)).collect() }
     pub fn module_get_mod_inst_count(&self, module: &str) -> i32 { sys::module_get_mod_inst_count(self.r(), module) }
     pub fn module_get_db_inst_count(&self, module: &str) -> i32 { sys::module_get_db_inst_count(self.r(), module) }
     pub fn module_is_top(&self, module: &str) -> bool { sys::module_is_top(self.r(), module) }

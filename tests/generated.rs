@@ -113,6 +113,32 @@ fn generated_row_and_site_accessors() {
 }
 
 #[test]
+fn generated_outparam_getter_matches_hand_written() {
+    let db = Db::open(FIXTURE).unwrap();
+    // `void dbInst::getLocation(int& x, int& y)` -> two scalar sub-fields; the hand-written
+    // inst_location() calls the same getLocation, so they must agree exactly.
+    let inst = db.nth_inst_name(0);
+    assert_eq!(
+        (db.inst_get_location_x(&inst), db.inst_get_location_y(&inst)),
+        db.inst_location(&inst)
+    );
+}
+
+#[test]
+fn generated_vector_getter_lists_leaf_insts() {
+    let db = Db::open(FIXTURE).unwrap();
+    // `std::vector<dbInst*> dbModule::getLeafInsts()` marshals like an iterator (count + nth-name)
+    let top = db.block_name();
+    let leaves = db.module_get_leaf_insts(&top);
+    assert!(
+        !leaves.is_empty() && leaves.len() <= db.num_insts(),
+        "top module leaf insts ({}) should be a non-empty subset of {}",
+        leaves.len(),
+        db.num_insts()
+    );
+}
+
+#[test]
 fn generated_module_hierarchy_reads() {
     let db = Db::open(FIXTURE).unwrap();
     // the fixture's flat design has a top module named after the block — exercises the newly
