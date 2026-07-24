@@ -96,6 +96,23 @@ fn generated_iterm_relations_agree_with_hand_written() {
 }
 
 #[test]
+fn generated_row_and_site_accessors() {
+    let db = Db::open(FIXTURE).unwrap();
+    // a placed design has placement rows; enumerate them via the generated iterator
+    let rows = db.block_get_rows();
+    assert!(!rows.is_empty(), "a placed fixture should have rows");
+    for row in &rows {
+        // row name round-trips, and its site relation resolves to a named, non-empty site
+        assert_eq!(db.row_get_name(row), *row);
+        let site = db.row_get_site(row);
+        assert!(!site.is_empty(), "row {row} should reference a site");
+        assert_eq!(db.site_get_name(&site), site);
+        // site dimensions are positive DBU values
+        assert!(db.site_get_width(&site) > 0 && db.site_get_height(&site) > 0);
+    }
+}
+
+#[test]
 fn generated_tech_layer_accessors() {
     let db = Db::open(FIXTURE).unwrap();
     // enumerate routing layers off the tech; every layer round-trips its name and reads a width

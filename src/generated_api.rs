@@ -233,4 +233,50 @@ impl Db {
     pub fn layer_get_upper_layer(&self, layer: &str) -> String { sys::layer_get_upper_layer(self.r(), layer) }
     pub fn layer_get_tech(&self, layer: &str) -> String { sys::layer_get_tech(self.r(), layer) }
     pub fn layer_has_orth_spacing_table(&self, layer: &str) -> bool { sys::layer_has_orth_spacing_table(self.r(), layer) }
+    pub fn row_get_name(&self, row: &str) -> String { sys::row_get_name(self.r(), row) }
+    pub fn row_get_const_name(&self, row: &str) -> String { sys::row_get_const_name(self.r(), row) }
+    pub fn row_get_site(&self, row: &str) -> String { sys::row_get_site(self.r(), row) }
+    pub fn row_get_orient(&self, row: &str) -> String { sys::row_get_orient(self.r(), row) }
+    pub fn row_get_site_count(&self, row: &str) -> i32 { sys::row_get_site_count(self.r(), row) }
+    pub fn row_get_spacing(&self, row: &str) -> i32 { sys::row_get_spacing(self.r(), row) }
+    pub fn row_get_block(&self, row: &str) -> String { sys::row_get_block(self.r(), row) }
+    pub fn via_get_name(&self, via: &str) -> String { sys::via_get_name(self.r(), via) }
+    pub fn via_get_const_name(&self, via: &str) -> String { sys::via_get_const_name(self.r(), via) }
+    pub fn via_get_pattern(&self, via: &str) -> String { sys::via_get_pattern(self.r(), via) }
+    pub fn via_get_via_generate_rule(&self, via: &str) -> String { sys::via_get_via_generate_rule(self.r(), via) }
+    pub fn via_has_params(&self, via: &str) -> bool { sys::via_has_params(self.r(), via) }
+    pub fn via_get_block(&self, via: &str) -> String { sys::via_get_block(self.r(), via) }
+    pub fn via_get_top_layer(&self, via: &str) -> String { sys::via_get_top_layer(self.r(), via) }
+    pub fn via_get_bottom_layer(&self, via: &str) -> String { sys::via_get_bottom_layer(self.r(), via) }
+    pub fn via_is_via_rotated(&self, via: &str) -> bool { sys::via_is_via_rotated(self.r(), via) }
+    pub fn via_get_orient(&self, via: &str) -> String { sys::via_get_orient(self.r(), via) }
+    pub fn via_get_tech_via(&self, via: &str) -> String { sys::via_get_tech_via(self.r(), via) }
+    pub fn via_get_block_via(&self, via: &str) -> String { sys::via_get_block_via(self.r(), via) }
+    pub fn via_is_default(&self, via: &str) -> bool { sys::via_is_default(self.r(), via) }
+    pub fn techvia_get_name(&self, via: &str) -> String { sys::techvia_get_name(self.r(), via) }
+    pub fn techvia_get_const_name(&self, via: &str) -> String { sys::techvia_get_const_name(self.r(), via) }
+    pub fn techvia_is_default(&self, via: &str) -> bool { sys::techvia_is_default(self.r(), via) }
+    pub fn techvia_is_top_of_stack(&self, via: &str) -> bool { sys::techvia_is_top_of_stack(self.r(), via) }
+    pub fn techvia_get_resistance(&self, via: &str) -> f64 { sys::techvia_get_resistance(self.r(), via) }
+    pub fn techvia_get_pattern(&self, via: &str) -> String { sys::techvia_get_pattern(self.r(), via) }
+    pub fn techvia_get_via_generate_rule(&self, via: &str) -> String { sys::techvia_get_via_generate_rule(self.r(), via) }
+    pub fn techvia_has_params(&self, via: &str) -> bool { sys::techvia_has_params(self.r(), via) }
+    pub fn techvia_get_tech(&self, via: &str) -> String { sys::techvia_get_tech(self.r(), via) }
+    pub fn techvia_get_top_layer(&self, via: &str) -> String { sys::techvia_get_top_layer(self.r(), via) }
+    pub fn techvia_get_bottom_layer(&self, via: &str) -> String { sys::techvia_get_bottom_layer(self.r(), via) }
+    pub fn techvia_get_non_default_rule(&self, via: &str) -> String { sys::techvia_get_non_default_rule(self.r(), via) }
+    pub fn ndr_get_name(&self, rule: &str) -> String { sys::ndr_get_name(self.r(), rule) }
+    pub fn ndr_get_const_name(&self, rule: &str) -> String { sys::ndr_get_const_name(self.r(), rule) }
+    pub fn ndr_is_block_rule(&self, rule: &str) -> bool { sys::ndr_is_block_rule(self.r(), rule) }
+    pub fn ndr_get_hard_spacing(&self, rule: &str) -> bool { sys::ndr_get_hard_spacing(self.r(), rule) }
+    pub fn site_get_name(&self, site: &str) -> String { sys::site_get_name(self.r(), site) }
+    pub fn site_get_const_name(&self, site: &str) -> String { sys::site_get_const_name(self.r(), site) }
+    pub fn site_get_width(&self, site: &str) -> i32 { sys::site_get_width(self.r(), site) }
+    pub fn site_get_height(&self, site: &str) -> i32 { sys::site_get_height(self.r(), site) }
+    pub fn site_get_symmetry_x(&self, site: &str) -> bool { sys::site_get_symmetry_x(self.r(), site) }
+    pub fn site_get_symmetry_y(&self, site: &str) -> bool { sys::site_get_symmetry_y(self.r(), site) }
+    pub fn site_get_symmetry_r90(&self, site: &str) -> bool { sys::site_get_symmetry_r90(self.r(), site) }
+    pub fn site_has_row_pattern(&self, site: &str) -> bool { sys::site_has_row_pattern(self.r(), site) }
+    pub fn site_is_hybrid(&self, site: &str) -> bool { sys::site_is_hybrid(self.r(), site) }
+    pub fn site_get_lib(&self, site: &str) -> String { sys::site_get_lib(self.r(), site) }
 }
