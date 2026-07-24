@@ -121,6 +121,10 @@ impl Db {
             .map(|i| sys::nth_iterm_name(self.r(), inst, i))
             .collect()
     }
+    /// Port direction (`INPUT`/`OUTPUT`/`INOUT`/…; empty if not found).
+    pub fn bterm_direction(&self, bterm: &str) -> String { sys::bterm_direction(self.r(), bterm) }
+    /// Total routed wire length over all nets, in DBU.
+    pub fn total_wire_length(&self) -> u64 { sys::total_wire_length(self.r()) }
 
     // ---- write primitives ----------------------------------------------------
     pub fn create_net(&mut self, name: &str) -> Result<()> {

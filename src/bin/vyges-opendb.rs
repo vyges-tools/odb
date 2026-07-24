@@ -56,6 +56,12 @@ commands:
   remove-obstructions       --input <in.odb> --output <out.odb>
                       Remove all obstructions.
 
+  write-verilog-header      --input <f.odb> [--output <f.v>]
+                      Emit a Verilog module header (ports + directions).
+
+  report-wire-length        --input <f.odb>
+                      Print the total routed wire length as JSON (report).
+
   --version, -V       Print the version.
   --help,    -h       Print this help.
 ";
@@ -82,6 +88,8 @@ fn run() -> Result<(), Fail> {
         "set-power-connections" => set_power_connections(args),
         "add-obstructions" => add_obstructions(args),
         "remove-obstructions" => remove_obstructions(args),
+        "write-verilog-header" => write_verilog_header(args),
+        "report-wire-length" => report_wire_length(args),
         "-V" | "--version" => {
             println!("vyges-opendb {}", env!("CARGO_PKG_VERSION"));
             Ok(())
@@ -647,5 +655,78 @@ fn remove_obstructions(mut args: impl Iterator<Item = String>) -> Result<(), Fai
     let n = eco::remove_obstructions(&mut db);
     db.write(&output)?;
     eprintln!("remove-obstructions: removed {n} obstruction(s), {input} -> {output}");
+    Ok(())
+}
+
+const WRITE_VERILOG_HEADER_DESCRIBE: &str = r#"{
+  "step": "write-verilog-header",
+  "summary": "Emit a Verilog module header (ports + directions) from a .odb (read-only).",
+  "librelane_equivalent": "Odb.WriteVerilogHeader",
+  "unix_only": true,
+  "args": [
+    { "name": "--input",  "kind": "input",  "type": "path", "required": true,  "description": "input .odb design" },
+    { "name": "--output", "kind": "output", "type": "path", "required": false, "description": "write here instead of stdout" }
+  ],
+  "output": "Verilog module header text"
+}"#;
+
+/// `write-verilog-header --input <f.odb> [--output <f.v>] | --describe`.
+fn write_verilog_header(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
+    let (mut input, mut output) = (None, None);
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--input" | "-i" => input = args.next(),
+            "--output" | "-o" => output = args.next(),
+            "--describe" => {
+                println!("{WRITE_VERILOG_HEADER_DESCRIBE}");
+                return Ok(());
+            }
+            "-h" | "--help" => {
+                eprintln!("usage: vyges-opendb write-verilog-header --input <f.odb> [--output <f.v>]");
+                return Ok(());
+            }
+            other => return Err(format!("write-verilog-header: unknown argument: {other}").into()),
+        }
+    }
+    let input = input.ok_or("write-verilog-header: --input <f.odb> required")?;
+    let header = report::verilog_header(&Db::open(&input)?);
+    match output {
+        Some(p) => std::fs::write(&p, header)?,
+        None => print!("{header}"),
+    }
+    Ok(())
+}
+
+const REPORT_WIRE_LENGTH_DESCRIBE: &str = r#"{
+  "step": "report-wire-length",
+  "summary": "Report the total routed wire length (DBU) as JSON (read-only).",
+  "librelane_equivalent": "Odb.ReportWireLength",
+  "unix_only": true,
+  "args": [
+    { "name": "--input", "kind": "input", "type": "path", "required": true, "description": "input .odb design" }
+  ],
+  "output": "JSON { total_wire_length_dbu } on stdout"
+}"#;
+
+/// `report-wire-length --input <f.odb> | --describe`.
+fn report_wire_length(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
+    let mut input = None;
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--input" | "-i" => input = args.next(),
+            "--describe" => {
+                println!("{REPORT_WIRE_LENGTH_DESCRIBE}");
+                return Ok(());
+            }
+            "-h" | "--help" => {
+                eprintln!("usage: vyges-opendb report-wire-length --input <f.odb>");
+                return Ok(());
+            }
+            other => return Err(format!("report-wire-length: unknown argument: {other}").into()),
+        }
+    }
+    let input = input.ok_or("report-wire-length: --input <f.odb> required")?;
+    let total = Db::open(&input)?.total_wire_length();
+    println!("{{ \"total_wire_length_dbu\": {total} }}");
     Ok(())
 }

@@ -48,3 +48,27 @@ pub fn disconnected_pins(db: &Db) -> Vec<String> {
     }
     out
 }
+
+/// `WriteVerilogHeader`: a Verilog module header (`module <name>(...); input/output ...`) built
+/// from the block's ports + directions. Mirrors LibreLane's `Odb.WriteVerilogHeader` (header only —
+/// no cell instantiations). Returns the Verilog text.
+pub fn verilog_header(db: &Db) -> String {
+    let ports = db.bterm_names();
+    let mut v = format!("module {} (\n", db.block_name());
+    for (i, p) in ports.iter().enumerate() {
+        let comma = if i + 1 < ports.len() { "," } else { "" };
+        v.push_str(&format!("  {p}{comma}\n"));
+    }
+    v.push_str(");\n");
+    for p in &ports {
+        let dir = match db.bterm_direction(p).as_str() {
+            "INPUT" => "input",
+            "OUTPUT" => "output",
+            _ => "inout",
+        };
+        v.push_str(&format!("  {dir} {p};\n"));
+    }
+    v.push_str("endmodule\n");
+    v
+}
+
