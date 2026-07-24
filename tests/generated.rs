@@ -113,6 +113,29 @@ fn generated_row_and_site_accessors() {
 }
 
 #[test]
+fn generated_index_addressed_box_geometry() {
+    // the index-addressing mode: dbObstruction/dbBox have no names, so they're addressed by
+    // position. Add a known-rect obstruction, then read its bbox back through the generated
+    // dbBox geometry getters (i-th obstruction's getBBox()).
+    let mut db = Db::open(FIXTURE).unwrap();
+    let n0 = db.num_obstructions();
+    db.add_obstruction("met1", 1000, 2000, 5000, 8000).unwrap();
+    assert_eq!(db.num_obstructions(), n0 + 1);
+
+    let i = (0..db.num_obstructions())
+        .find(|&i| {
+            db.box_x_min(i) == 1000 && db.box_y_min(i) == 2000
+                && db.box_x_max(i) == 5000 && db.box_y_max(i) == 8000
+        })
+        .expect("the added obstruction's bbox should be readable by index");
+    // dbBox derived dimensions agree with the rect (getDX/getDY = width/height)
+    assert_eq!(db.box_get_d_x(i), 4000);
+    assert_eq!(db.box_get_d_y(i), 6000);
+    // an obstruction predicate reads without panic
+    let _ = db.obs_is_slot_obstruction(i);
+}
+
+#[test]
 fn generated_tech_layer_accessors() {
     let db = Db::open(FIXTURE).unwrap();
     // enumerate routing layers off the tech; every layer round-trips its name and reads a width

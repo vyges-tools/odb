@@ -279,4 +279,40 @@ impl Db {
     pub fn site_has_row_pattern(&self, site: &str) -> bool { sys::site_has_row_pattern(self.r(), site) }
     pub fn site_is_hybrid(&self, site: &str) -> bool { sys::site_is_hybrid(self.r(), site) }
     pub fn site_get_lib(&self, site: &str) -> String { sys::site_get_lib(self.r(), site) }
+    pub fn obs_get_instance(&self, idx: usize) -> String { sys::obs_get_instance(self.r(), idx) }
+    pub fn obs_is_slot_obstruction(&self, idx: usize) -> bool { sys::obs_is_slot_obstruction(self.r(), idx) }
+    pub fn obs_is_fill_obstruction(&self, idx: usize) -> bool { sys::obs_is_fill_obstruction(self.r(), idx) }
+    pub fn obs_is_except_p_g_nets_obstruction(&self, idx: usize) -> bool { sys::obs_is_except_p_g_nets_obstruction(self.r(), idx) }
+    pub fn obs_is_pushed_down(&self, idx: usize) -> bool { sys::obs_is_pushed_down(self.r(), idx) }
+    pub fn obs_has_effective_width(&self, idx: usize) -> bool { sys::obs_has_effective_width(self.r(), idx) }
+    pub fn obs_get_effective_width(&self, idx: usize) -> i32 { sys::obs_get_effective_width(self.r(), idx) }
+    pub fn obs_has_min_spacing(&self, idx: usize) -> bool { sys::obs_has_min_spacing(self.r(), idx) }
+    pub fn obs_get_min_spacing(&self, idx: usize) -> i32 { sys::obs_get_min_spacing(self.r(), idx) }
+    pub fn obs_get_block(&self, idx: usize) -> String { sys::obs_get_block(self.r(), idx) }
+    pub fn obs_is_system_reserved(&self, idx: usize) -> bool { sys::obs_is_system_reserved(self.r(), idx) }
+    pub fn swire_get_block(&self, net: &str, idx: usize) -> String { sys::swire_get_block(self.r(), net, idx) }
+    pub fn swire_get_net(&self, net: &str, idx: usize) -> String { sys::swire_get_net(self.r(), net, idx) }
+    pub fn swire_get_wire_type(&self, net: &str, idx: usize) -> String { sys::swire_get_wire_type(self.r(), net, idx) }
+    pub fn swire_get_shield(&self, net: &str, idx: usize) -> String { sys::swire_get_shield(self.r(), net, idx) }
+    pub fn wire_get_block(&self, net: &str) -> String { sys::wire_get_block(self.r(), net) }
+    pub fn wire_get_net(&self, net: &str) -> String { sys::wire_get_net(self.r(), net) }
+    pub fn wire_is_global_wire(&self, net: &str) -> bool { sys::wire_is_global_wire(self.r(), net) }
+    pub fn wire_length(&self, net: &str) -> u32 { sys::wire_length(self.r(), net) }
+    pub fn wire_count(&self, net: &str) -> u32 { sys::wire_count(self.r(), net) }
+    pub fn fill_needs_o_p_c(&self, idx: usize) -> bool { sys::fill_needs_o_p_c(self.r(), idx) }
+    pub fn fill_mask_number(&self, idx: usize) -> u32 { sys::fill_mask_number(self.r(), idx) }
+    pub fn fill_get_tech_layer(&self, idx: usize) -> String { sys::fill_get_tech_layer(self.r(), idx) }
+    pub fn box_x_min(&self, idx: usize) -> i32 { sys::box_x_min(self.r(), idx) }
+    pub fn box_y_min(&self, idx: usize) -> i32 { sys::box_y_min(self.r(), idx) }
+    pub fn box_x_max(&self, idx: usize) -> i32 { sys::box_x_max(self.r(), idx) }
+    pub fn box_y_max(&self, idx: usize) -> i32 { sys::box_y_max(self.r(), idx) }
+    pub fn box_is_via(&self, idx: usize) -> bool { sys::box_is_via(self.r(), idx) }
+    pub fn box_get_tech_via(&self, idx: usize) -> String { sys::box_get_tech_via(self.r(), idx) }
+    pub fn box_get_block_via(&self, idx: usize) -> String { sys::box_get_block_via(self.r(), idx) }
+    pub fn box_get_d_x(&self, idx: usize) -> u32 { sys::box_get_d_x(self.r(), idx) }
+    pub fn box_get_design_rule_width(&self, idx: usize) -> i32 { sys::box_get_design_rule_width(self.r(), idx) }
+    pub fn box_get_d_y(&self, idx: usize) -> u32 { sys::box_get_d_y(self.r(), idx) }
+    pub fn box_is_soft(&self, idx: usize) -> bool { sys::box_is_soft(self.r(), idx) }
+    pub fn box_get_tech_layer(&self, idx: usize) -> String { sys::box_get_tech_layer(self.r(), idx) }
+    pub fn box_get_layer_mask(&self, idx: usize) -> u32 { sys::box_get_layer_mask(self.r(), idx) }
 }
