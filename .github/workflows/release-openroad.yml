@@ -6,6 +6,10 @@
 # vyges CLI expects: install_one() fetches `vyges-openroad-<target>.tar.gz` from
 # github.com/vyges-tools/odb/releases/latest/download/ and extracts a `vyges-openroad` binary.
 #
+# This repo's Cargo.toml [patch]es vyges-odb-sys to the sibling ../vyges-tools-odb-sys for local
+# dev, so CI checks BOTH repos out as siblings under the workspace to satisfy that path (building
+# against odb-sys @ main == the git dep it would otherwise use).
+#
 # Trigger: push a tag `v*` (publishes a Release with all four assets), or run manually to
 # smoke the build (workflow_dispatch uploads artifacts only, no Release).
 name: release-openroad
@@ -22,6 +26,9 @@ jobs:
   build:
     name: ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: vyges-tools-odb   # the odb checkout (sibling layout below)
     strategy:
       fail-fast: false
       matrix:
@@ -31,7 +38,15 @@ jobs:
           - { os: macos-14,         target: aarch64-apple-darwin      }
           - { os: macos-13,         target: x86_64-apple-darwin       }
     steps:
+      # Sibling layout: <ws>/vyges-tools-odb + <ws>/vyges-tools-odb-sys, so Cargo.toml's
+      # `[patch] vyges-odb-sys = { path = "../vyges-tools-odb-sys" }` resolves on CI.
       - uses: actions/checkout@v4
+        with:
+          path: vyges-tools-odb
+      - uses: actions/checkout@v4
+        with:
+          repository: vyges-tools/odb-sys
+          path: vyges-tools-odb-sys
 
       - name: Toolchain (Linux)
         if: runner.os == 'Linux'
@@ -64,16 +79,16 @@ jobs:
         run: |
           set -eu
           NAME="vyges-openroad-${{ matrix.target }}"
-          STAGE="dist/$NAME"
+          STAGE="$RUNNER_TEMP/$NAME"
           mkdir -p "$STAGE"
           cp target/release/vyges-openroad "$STAGE/"
           strip "$STAGE/vyges-openroad" 2>/dev/null || strip -x "$STAGE/vyges-openroad" || true
           cp LICENSE NOTICE README.md "$STAGE/" 2>/dev/null || true
           cp THIRD_PARTY_LICENSES.md "$STAGE/" 2>/dev/null || true
-          tar -C dist -czf "$NAME.tar.gz" "$NAME"
-          shasum -a 256 "$NAME.tar.gz" > "$NAME.tar.gz.sha256"
+          tar -C "$RUNNER_TEMP" -czf "$GITHUB_WORKSPACE/$NAME.tar.gz" "$NAME"
+          ( cd "$GITHUB_WORKSPACE" && shasum -a 256 "$NAME.tar.gz" > "$NAME.tar.gz.sha256" )
           echo "asset=$NAME.tar.gz" >> "$GITHUB_OUTPUT"
-          echo "--- $NAME.tar.gz ---"; tar -tzf "$NAME.tar.gz"; cat "$NAME.tar.gz.sha256"
+          echo "--- $NAME.tar.gz ---"; tar -tzf "$GITHUB_WORKSPACE/$NAME.tar.gz"; cat "$GITHUB_WORKSPACE/$NAME.tar.gz.sha256"
 
       - name: Upload build artifact (always)
         uses: actions/upload-artifact@v4
