@@ -23,6 +23,18 @@ impl Db {
     pub fn block_get_ext_db_count(&self) -> i32 { sys::block_get_ext_db_count(self.r()) }
     pub fn block_get_corner_name_list(&self) -> String { sys::block_get_corner_name_list(self.r()) }
     pub fn block_get_rows(&self) -> Vec<String> { (0..sys::num_block_get_rows(self.r())).map(|i| sys::nth_block_get_rows(self.r(), i)).collect() }
+    pub fn block_get_die_area_x_min(&self) -> i32 { sys::block_get_die_area_x_min(self.r()) }
+    pub fn block_get_die_area_y_min(&self) -> i32 { sys::block_get_die_area_y_min(self.r()) }
+    pub fn block_get_die_area_x_max(&self) -> i32 { sys::block_get_die_area_x_max(self.r()) }
+    pub fn block_get_die_area_y_max(&self) -> i32 { sys::block_get_die_area_y_max(self.r()) }
+    pub fn block_get_die_area_dx(&self) -> i32 { sys::block_get_die_area_dx(self.r()) }
+    pub fn block_get_die_area_dy(&self) -> i32 { sys::block_get_die_area_dy(self.r()) }
+    pub fn block_get_core_area_x_min(&self) -> i32 { sys::block_get_core_area_x_min(self.r()) }
+    pub fn block_get_core_area_y_min(&self) -> i32 { sys::block_get_core_area_y_min(self.r()) }
+    pub fn block_get_core_area_x_max(&self) -> i32 { sys::block_get_core_area_x_max(self.r()) }
+    pub fn block_get_core_area_y_max(&self) -> i32 { sys::block_get_core_area_y_max(self.r()) }
+    pub fn block_get_core_area_dx(&self) -> i32 { sys::block_get_core_area_dx(self.r()) }
+    pub fn block_get_core_area_dy(&self) -> i32 { sys::block_get_core_area_dy(self.r()) }
     pub fn block_get_min_routing_layer(&self) -> i32 { sys::block_get_min_routing_layer(self.r()) }
     pub fn block_get_max_routing_layer(&self) -> i32 { sys::block_get_max_routing_layer(self.r()) }
     pub fn block_get_min_layer_for_clock(&self) -> i32 { sys::block_get_min_layer_for_clock(self.r()) }
@@ -32,7 +44,11 @@ impl Db {
     pub fn block_get_non_default_rules(&self) -> Vec<String> { (0..sys::num_block_get_non_default_rules(self.r())).map(|i| sys::nth_block_get_non_default_rules(self.r(), i)).collect() }
     pub fn inst_get_name(&self, inst: &str) -> String { sys::inst_get_name(self.r(), inst) }
     pub fn inst_get_const_name(&self, inst: &str) -> String { sys::inst_get_const_name(self.r(), inst) }
+    pub fn inst_get_origin_x(&self, inst: &str) -> i32 { sys::inst_get_origin_x(self.r(), inst) }
+    pub fn inst_get_origin_y(&self, inst: &str) -> i32 { sys::inst_get_origin_y(self.r(), inst) }
     pub fn inst_get_orient(&self, inst: &str) -> String { sys::inst_get_orient(self.r(), inst) }
+    pub fn inst_get_location_x(&self, inst: &str) -> i32 { sys::inst_get_location_x(self.r(), inst) }
+    pub fn inst_get_location_y(&self, inst: &str) -> i32 { sys::inst_get_location_y(self.r(), inst) }
     pub fn inst_get_placement_status(&self, inst: &str) -> String { sys::inst_get_placement_status(self.r(), inst) }
     pub fn inst_is_fixed(&self, inst: &str) -> bool { sys::inst_is_fixed(self.r(), inst) }
     pub fn inst_is_placed(&self, inst: &str) -> bool { sys::inst_is_placed(self.r(), inst) }
@@ -54,6 +70,12 @@ impl Db {
     pub fn inst_get_children(&self, inst: &str) -> Vec<String> { (0..sys::num_inst_get_children(self.r(), inst)).map(|i| sys::nth_inst_get_children(self.r(), inst, i)).collect() }
     pub fn inst_is_hierarchical(&self, inst: &str) -> bool { sys::inst_is_hierarchical(self.r(), inst) }
     pub fn inst_is_physical_only(&self, inst: &str) -> bool { sys::inst_is_physical_only(self.r(), inst) }
+    pub fn inst_get_transformed_halo_x_min(&self, inst: &str) -> i32 { sys::inst_get_transformed_halo_x_min(self.r(), inst) }
+    pub fn inst_get_transformed_halo_y_min(&self, inst: &str) -> i32 { sys::inst_get_transformed_halo_y_min(self.r(), inst) }
+    pub fn inst_get_transformed_halo_x_max(&self, inst: &str) -> i32 { sys::inst_get_transformed_halo_x_max(self.r(), inst) }
+    pub fn inst_get_transformed_halo_y_max(&self, inst: &str) -> i32 { sys::inst_get_transformed_halo_y_max(self.r(), inst) }
+    pub fn inst_get_transformed_halo_dx(&self, inst: &str) -> i32 { sys::inst_get_transformed_halo_dx(self.r(), inst) }
+    pub fn inst_get_transformed_halo_dy(&self, inst: &str) -> i32 { sys::inst_get_transformed_halo_dy(self.r(), inst) }
     pub fn inst_get_weight(&self, inst: &str) -> i32 { sys::inst_get_weight(self.r(), inst) }
     pub fn inst_get_source_type(&self, inst: &str) -> String { sys::inst_get_source_type(self.r(), inst) }
     pub fn inst_is_block(&self, inst: &str) -> bool { sys::inst_is_block(self.r(), inst) }
@@ -108,10 +130,22 @@ impl Db {
     pub fn net_get_term_count(&self, net: &str) -> u32 { sys::net_get_term_count(self.r(), net) }
     pub fn net_get_i_term_count(&self, net: &str) -> u32 { sys::net_get_i_term_count(self.r(), net) }
     pub fn net_get_b_term_count(&self, net: &str) -> u32 { sys::net_get_b_term_count(self.r(), net) }
+    pub fn net_get_term_b_box_x_min(&self, net: &str) -> i32 { sys::net_get_term_b_box_x_min(self.r(), net) }
+    pub fn net_get_term_b_box_y_min(&self, net: &str) -> i32 { sys::net_get_term_b_box_y_min(self.r(), net) }
+    pub fn net_get_term_b_box_x_max(&self, net: &str) -> i32 { sys::net_get_term_b_box_x_max(self.r(), net) }
+    pub fn net_get_term_b_box_y_max(&self, net: &str) -> i32 { sys::net_get_term_b_box_y_max(self.r(), net) }
+    pub fn net_get_term_b_box_dx(&self, net: &str) -> i32 { sys::net_get_term_b_box_dx(self.r(), net) }
+    pub fn net_get_term_b_box_dy(&self, net: &str) -> i32 { sys::net_get_term_b_box_dy(self.r(), net) }
     pub fn net_has_jumpers(&self, net: &str) -> bool { sys::net_has_jumpers(self.r(), net) }
     pub fn net_find_mod_net_in_highest_hier(&self, net: &str) -> String { sys::net_find_mod_net_in_highest_hier(self.r(), net) }
     pub fn bterm_get_name(&self, bterm: &str) -> String { sys::bterm_get_name(self.r(), bterm) }
     pub fn bterm_get_const_name(&self, bterm: &str) -> String { sys::bterm_get_const_name(self.r(), bterm) }
+    pub fn bterm_get_b_box_x_min(&self, bterm: &str) -> i32 { sys::bterm_get_b_box_x_min(self.r(), bterm) }
+    pub fn bterm_get_b_box_y_min(&self, bterm: &str) -> i32 { sys::bterm_get_b_box_y_min(self.r(), bterm) }
+    pub fn bterm_get_b_box_x_max(&self, bterm: &str) -> i32 { sys::bterm_get_b_box_x_max(self.r(), bterm) }
+    pub fn bterm_get_b_box_y_max(&self, bterm: &str) -> i32 { sys::bterm_get_b_box_y_max(self.r(), bterm) }
+    pub fn bterm_get_b_box_dx(&self, bterm: &str) -> i32 { sys::bterm_get_b_box_dx(self.r(), bterm) }
+    pub fn bterm_get_b_box_dy(&self, bterm: &str) -> i32 { sys::bterm_get_b_box_dy(self.r(), bterm) }
     pub fn bterm_get_sig_type(&self, bterm: &str) -> String { sys::bterm_get_sig_type(self.r(), bterm) }
     pub fn bterm_get_io_type(&self, bterm: &str) -> String { sys::bterm_get_io_type(self.r(), bterm) }
     pub fn bterm_is_set_spef_mark(&self, bterm: &str) -> bool { sys::bterm_is_set_spef_mark(self.r(), bterm) }
@@ -131,6 +165,8 @@ impl Db {
     pub fn bterm_is_mirrored(&self, bterm: &str) -> bool { sys::bterm_is_mirrored(self.r(), bterm) }
     pub fn master_get_name(&self, master: &str) -> String { sys::master_get_name(self.r(), master) }
     pub fn master_get_const_name(&self, master: &str) -> String { sys::master_get_const_name(self.r(), master) }
+    pub fn master_get_origin_x(&self, master: &str) -> i32 { sys::master_get_origin_x(self.r(), master) }
+    pub fn master_get_origin_y(&self, master: &str) -> i32 { sys::master_get_origin_y(self.r(), master) }
     pub fn master_get_width(&self, master: &str) -> u32 { sys::master_get_width(self.r(), master) }
     pub fn master_get_height(&self, master: &str) -> u32 { sys::master_get_height(self.r(), master) }
     pub fn master_is_filler(&self, master: &str) -> bool { sys::master_is_filler(self.r(), master) }
@@ -159,6 +195,12 @@ impl Db {
     pub fn iterm_get_net(&self, inst: &str, pin: &str) -> String { sys::iterm_get_net(self.r(), inst, pin) }
     pub fn iterm_get_mod_net(&self, inst: &str, pin: &str) -> String { sys::iterm_get_mod_net(self.r(), inst, pin) }
     pub fn iterm_get_m_term(&self, inst: &str, pin: &str) -> String { sys::iterm_get_m_term(self.r(), inst, pin) }
+    pub fn iterm_get_b_box_x_min(&self, inst: &str, pin: &str) -> i32 { sys::iterm_get_b_box_x_min(self.r(), inst, pin) }
+    pub fn iterm_get_b_box_y_min(&self, inst: &str, pin: &str) -> i32 { sys::iterm_get_b_box_y_min(self.r(), inst, pin) }
+    pub fn iterm_get_b_box_x_max(&self, inst: &str, pin: &str) -> i32 { sys::iterm_get_b_box_x_max(self.r(), inst, pin) }
+    pub fn iterm_get_b_box_y_max(&self, inst: &str, pin: &str) -> i32 { sys::iterm_get_b_box_y_max(self.r(), inst, pin) }
+    pub fn iterm_get_b_box_dx(&self, inst: &str, pin: &str) -> i32 { sys::iterm_get_b_box_dx(self.r(), inst, pin) }
+    pub fn iterm_get_b_box_dy(&self, inst: &str, pin: &str) -> i32 { sys::iterm_get_b_box_dy(self.r(), inst, pin) }
     pub fn iterm_get_block(&self, inst: &str, pin: &str) -> String { sys::iterm_get_block(self.r(), inst, pin) }
     pub fn iterm_get_sig_type(&self, inst: &str, pin: &str) -> String { sys::iterm_get_sig_type(self.r(), inst, pin) }
     pub fn iterm_get_io_type(&self, inst: &str, pin: &str) -> String { sys::iterm_get_io_type(self.r(), inst, pin) }
@@ -176,6 +218,12 @@ impl Db {
     pub fn mterm_get_io_type(&self, master: &str, term: &str) -> String { sys::mterm_get_io_type(self.r(), master, term) }
     pub fn mterm_is_set_mark(&self, master: &str, term: &str) -> bool { sys::mterm_is_set_mark(self.r(), master, term) }
     pub fn mterm_get_master(&self, master: &str, term: &str) -> String { sys::mterm_get_master(self.r(), master, term) }
+    pub fn mterm_get_b_box_x_min(&self, master: &str, term: &str) -> i32 { sys::mterm_get_b_box_x_min(self.r(), master, term) }
+    pub fn mterm_get_b_box_y_min(&self, master: &str, term: &str) -> i32 { sys::mterm_get_b_box_y_min(self.r(), master, term) }
+    pub fn mterm_get_b_box_x_max(&self, master: &str, term: &str) -> i32 { sys::mterm_get_b_box_x_max(self.r(), master, term) }
+    pub fn mterm_get_b_box_y_max(&self, master: &str, term: &str) -> i32 { sys::mterm_get_b_box_y_max(self.r(), master, term) }
+    pub fn mterm_get_b_box_dx(&self, master: &str, term: &str) -> i32 { sys::mterm_get_b_box_dx(self.r(), master, term) }
+    pub fn mterm_get_b_box_dy(&self, master: &str, term: &str) -> i32 { sys::mterm_get_b_box_dy(self.r(), master, term) }
     pub fn mterm_has_default_antenna_model(&self, master: &str, term: &str) -> bool { sys::mterm_has_default_antenna_model(self.r(), master, term) }
     pub fn mterm_has_oxide2_antenna_model(&self, master: &str, term: &str) -> bool { sys::mterm_has_oxide2_antenna_model(self.r(), master, term) }
     pub fn mterm_get_index(&self, master: &str, term: &str) -> i32 { sys::mterm_get_index(self.r(), master, term) }
@@ -236,9 +284,17 @@ impl Db {
     pub fn row_get_name(&self, row: &str) -> String { sys::row_get_name(self.r(), row) }
     pub fn row_get_const_name(&self, row: &str) -> String { sys::row_get_const_name(self.r(), row) }
     pub fn row_get_site(&self, row: &str) -> String { sys::row_get_site(self.r(), row) }
+    pub fn row_get_origin_x(&self, row: &str) -> i32 { sys::row_get_origin_x(self.r(), row) }
+    pub fn row_get_origin_y(&self, row: &str) -> i32 { sys::row_get_origin_y(self.r(), row) }
     pub fn row_get_orient(&self, row: &str) -> String { sys::row_get_orient(self.r(), row) }
     pub fn row_get_site_count(&self, row: &str) -> i32 { sys::row_get_site_count(self.r(), row) }
     pub fn row_get_spacing(&self, row: &str) -> i32 { sys::row_get_spacing(self.r(), row) }
+    pub fn row_get_b_box_x_min(&self, row: &str) -> i32 { sys::row_get_b_box_x_min(self.r(), row) }
+    pub fn row_get_b_box_y_min(&self, row: &str) -> i32 { sys::row_get_b_box_y_min(self.r(), row) }
+    pub fn row_get_b_box_x_max(&self, row: &str) -> i32 { sys::row_get_b_box_x_max(self.r(), row) }
+    pub fn row_get_b_box_y_max(&self, row: &str) -> i32 { sys::row_get_b_box_y_max(self.r(), row) }
+    pub fn row_get_b_box_dx(&self, row: &str) -> i32 { sys::row_get_b_box_dx(self.r(), row) }
+    pub fn row_get_b_box_dy(&self, row: &str) -> i32 { sys::row_get_b_box_dy(self.r(), row) }
     pub fn row_get_block(&self, row: &str) -> String { sys::row_get_block(self.r(), row) }
     pub fn via_get_name(&self, via: &str) -> String { sys::via_get_name(self.r(), via) }
     pub fn via_get_const_name(&self, via: &str) -> String { sys::via_get_const_name(self.r(), via) }
@@ -309,6 +365,14 @@ impl Db {
     pub fn box_is_via(&self, idx: usize) -> bool { sys::box_is_via(self.r(), idx) }
     pub fn box_get_tech_via(&self, idx: usize) -> String { sys::box_get_tech_via(self.r(), idx) }
     pub fn box_get_block_via(&self, idx: usize) -> String { sys::box_get_block_via(self.r(), idx) }
+    pub fn box_get_via_x_y_x(&self, idx: usize) -> i32 { sys::box_get_via_x_y_x(self.r(), idx) }
+    pub fn box_get_via_x_y_y(&self, idx: usize) -> i32 { sys::box_get_via_x_y_y(self.r(), idx) }
+    pub fn box_get_box_x_min(&self, idx: usize) -> i32 { sys::box_get_box_x_min(self.r(), idx) }
+    pub fn box_get_box_y_min(&self, idx: usize) -> i32 { sys::box_get_box_y_min(self.r(), idx) }
+    pub fn box_get_box_x_max(&self, idx: usize) -> i32 { sys::box_get_box_x_max(self.r(), idx) }
+    pub fn box_get_box_y_max(&self, idx: usize) -> i32 { sys::box_get_box_y_max(self.r(), idx) }
+    pub fn box_get_box_dx(&self, idx: usize) -> i32 { sys::box_get_box_dx(self.r(), idx) }
+    pub fn box_get_box_dy(&self, idx: usize) -> i32 { sys::box_get_box_dy(self.r(), idx) }
     pub fn box_get_d_x(&self, idx: usize) -> u32 { sys::box_get_d_x(self.r(), idx) }
     pub fn box_get_design_rule_width(&self, idx: usize) -> i32 { sys::box_get_design_rule_width(self.r(), idx) }
     pub fn box_get_d_y(&self, idx: usize) -> u32 { sys::box_get_d_y(self.r(), idx) }

@@ -31,6 +31,16 @@ fn generated_enum_setter_round_trips() {
 }
 
 #[test]
+fn generated_multi_value_setter_round_trips_via_geometry() {
+    let mut db = Db::open(FIXTURE).unwrap();
+    let inst = db.nth_inst_name(0);
+    // a 2-value setter (setOrigin(int x, int y)); read back through the expanded Point sub-fields
+    db.inst_set_origin(&inst, 12_000, 34_000).unwrap();
+    assert_eq!(db.inst_get_origin_x(&inst), 12_000);
+    assert_eq!(db.inst_get_origin_y(&inst), 34_000);
+}
+
+#[test]
 fn generated_setter_errs_on_missing_object() {
     let mut db = Db::open(FIXTURE).unwrap();
     // addressing a non-existent net must surface a typed error, not a panic or silent no-op

@@ -113,6 +113,21 @@ fn generated_row_and_site_accessors() {
 }
 
 #[test]
+fn generated_struct_geometry_subfields() {
+    let db = Db::open(FIXTURE).unwrap();
+    // a Rect getter (block die area) expands into x_min/y_min/x_max/y_max/dx/dy scalar sub-fields
+    let (x0, y0) = (db.block_get_die_area_x_min(), db.block_get_die_area_y_min());
+    let (x1, y1) = (db.block_get_die_area_x_max(), db.block_get_die_area_y_max());
+    assert!(x1 >= x0 && y1 >= y0, "die area should be a valid rect: ({x0},{y0})-({x1},{y1})");
+    // the derived dimensions are internally consistent
+    assert_eq!(db.block_get_die_area_dx(), x1 - x0);
+    assert_eq!(db.block_get_die_area_dy(), y1 - y0);
+    // a Point getter (inst origin) expands into x/y; readable for every instance
+    let inst = db.nth_inst_name(0);
+    let _ = (db.inst_get_origin_x(&inst), db.inst_get_origin_y(&inst));
+}
+
+#[test]
 fn generated_index_addressed_box_geometry() {
     // the index-addressing mode: dbObstruction/dbBox have no names, so they're addressed by
     // position. Add a known-rect obstruction, then read its bbox back through the generated
