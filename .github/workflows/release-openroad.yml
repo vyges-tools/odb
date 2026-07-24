@@ -72,7 +72,9 @@ jobs:
           targets: ${{ matrix.target }}
 
       - name: Build (release; libodb built from source, static)
-        run: cargo build --release --locked --bin vyges-openroad
+        # No --locked: Cargo.lock is gitignored in this repo, and the [patch] resolves
+        # vyges-odb-sys to the freshly-checked-out odb-sys@main sibling — let Cargo resolve.
+        run: cargo build --release --bin vyges-openroad
 
       - name: Package vyges-openroad-${{ matrix.target }}.tar.gz
         id: pkg
