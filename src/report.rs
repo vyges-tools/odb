@@ -49,6 +49,46 @@ pub fn disconnected_pins(db: &Db) -> Vec<String> {
     out
 }
 
+/// One net's connectivity: its type, special flag, and the pins it touches.
+#[derive(Debug, Clone, Serialize)]
+pub struct NetConn {
+    pub net: String,
+    pub sig_type: String,
+    pub special: bool,
+    /// Instance pins (`inst/pin`) on the net.
+    pub iterms: Vec<String>,
+    /// Block ports on the net.
+    pub bterms: Vec<String>,
+    /// Total pin count (fanout+1): `iterms + bterms`.
+    pub degree: usize,
+}
+
+/// Connectivity graph: one `NetConn` per net (its sig-type, special flag, and the pins it touches),
+/// highest-degree net first. This is the core instrumentation primitive — a netlist connectivity
+/// dump that higher layers turn into fanout histograms, high-fanout-net reports, clock/power-net
+/// audits, etc. Read-only; no LibreLane counterpart (it's an odb-native traversal).
+pub fn net_connectivity(db: &Db) -> Vec<NetConn> {
+    let mut rows: Vec<NetConn> = db
+        .net_names()
+        .into_iter()
+        .map(|net| {
+            let iterms = db.net_iterms(&net);
+            let bterms = db.net_bterms(&net);
+            let degree = iterms.len() + bterms.len();
+            NetConn {
+                sig_type: db.net_sigtype(&net),
+                special: db.net_is_special(&net),
+                iterms,
+                bterms,
+                degree,
+                net,
+            }
+        })
+        .collect();
+    rows.sort_by(|a, b| b.degree.cmp(&a.degree).then_with(|| a.net.cmp(&b.net)));
+    rows
+}
+
 /// `WriteVerilogHeader`: a Verilog module header (`module <name>(...); input/output ...`) built
 /// from the block's ports + directions. Mirrors LibreLane's `Odb.WriteVerilogHeader` (header only —
 /// no cell instantiations). Returns the Verilog text.

@@ -137,6 +137,26 @@ impl Db {
     pub fn bterm_direction(&self, bterm: &str) -> String { sys::bterm_direction(self.r(), bterm) }
     /// Total routed wire length over all nets, in DBU.
     pub fn total_wire_length(&self) -> u64 { sys::total_wire_length(self.r()) }
+    /// All net names.
+    pub fn net_names(&self) -> Vec<String> {
+        (0..self.num_nets()).map(|i| sys::nth_net_name(self.r(), i)).collect()
+    }
+    /// A net's signal type (`SIGNAL`/`POWER`/`GROUND`/`CLOCK`/…; empty if not found).
+    pub fn net_sigtype(&self, net: &str) -> String { sys::net_sigtype(self.r(), net) }
+    /// Whether `net` is a special (power/routing) net.
+    pub fn net_is_special(&self, net: &str) -> bool { sys::net_is_special(self.r(), net) }
+    /// The instance pins (`inst/pin`) connected to `net` — the net's instance-side connectivity.
+    pub fn net_iterms(&self, net: &str) -> Vec<String> {
+        (0..sys::num_net_iterms(self.r(), net))
+            .map(|i| sys::nth_net_iterm(self.r(), net, i))
+            .collect()
+    }
+    /// The block ports (bterms) connected to `net`.
+    pub fn net_bterms(&self, net: &str) -> Vec<String> {
+        (0..sys::num_net_bterms(self.r(), net))
+            .map(|i| sys::nth_net_bterm(self.r(), net, i))
+            .collect()
+    }
 
     // ---- write primitives ----------------------------------------------------
     pub fn create_net(&mut self, name: &str) -> Result<()> {

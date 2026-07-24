@@ -62,6 +62,9 @@ commands:
   report-wire-length        --input <f.odb>
                       Print the total routed wire length as JSON (report).
 
+  report-connectivity       --input <f.odb>
+                      Dump the netlist connectivity graph as JSON (report).
+
   custom-io-placement       --input <in.odb> --output <out.odb> [--config <cfg.json>]
                       Place I/O port pins (CUSTOM_IO_PLACEMENT in the config).
 
@@ -102,6 +105,7 @@ fn run() -> Result<(), Fail> {
         "remove-obstructions" => remove_obstructions(args),
         "write-verilog-header" => write_verilog_header(args),
         "report-wire-length" => report_wire_length(args),
+        "report-connectivity" => report_connectivity(args),
         "custom-io-placement" => custom_io_placement(args),
         "write-def" => write_def(args),
         "read-def" => read_def(args),
@@ -744,6 +748,40 @@ fn report_wire_length(mut args: impl Iterator<Item = String>) -> Result<(), Fail
     let input = input.ok_or("report-wire-length: --input <f.odb> required")?;
     let total = Db::open(&input)?.total_wire_length();
     println!("{{ \"total_wire_length_dbu\": {total} }}");
+    Ok(())
+}
+
+const REPORT_CONNECTIVITY_DESCRIBE: &str = r#"{
+  "step": "report-connectivity",
+  "summary": "Dump the netlist connectivity graph (per-net sig-type, special flag, and pins) as JSON, highest-degree net first (read-only).",
+  "librelane_equivalent": null,
+  "unix_only": true,
+  "args": [
+    { "name": "--input", "kind": "input", "type": "path", "required": true, "description": "input .odb design" }
+  ],
+  "output": "JSON array of { net, sig_type, special, iterms, bterms, degree } on stdout"
+}"#;
+
+/// `report-connectivity --input <f.odb> | --describe` — read-only netlist graph dump (JSON).
+fn report_connectivity(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
+    let mut input = None;
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--input" | "-i" => input = args.next(),
+            "--describe" => {
+                println!("{REPORT_CONNECTIVITY_DESCRIBE}");
+                return Ok(());
+            }
+            "-h" | "--help" => {
+                eprintln!("usage: vyges-opendb report-connectivity --input <f.odb>");
+                return Ok(());
+            }
+            other => return Err(format!("report-connectivity: unknown argument: {other}").into()),
+        }
+    }
+    let input = input.ok_or("report-connectivity: --input <f.odb> required")?;
+    let db = Db::open(&input)?;
+    println!("{}", serde_json::to_string_pretty(&report::net_connectivity(&db))?);
     Ok(())
 }
 

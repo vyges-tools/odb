@@ -40,6 +40,29 @@ fn verilog_header_has_module_and_ports() {
 }
 
 #[test]
+fn net_connectivity_matches_the_netlist() {
+    let db = Db::open(FIXTURE).unwrap();
+    let graph = report::net_connectivity(&db);
+    // one row per net, highest-degree first
+    assert_eq!(graph.len(), db.num_nets());
+    for w in graph.windows(2) {
+        assert!(w[0].degree >= w[1].degree);
+    }
+    for row in &graph {
+        assert_eq!(row.degree, row.iterms.len() + row.bterms.len());
+        // every instance pin the net claims must, going the other way, name this net
+        for it in &row.iterms {
+            let (inst, pin) = it.split_once('/').expect("inst/pin");
+            assert_eq!(db.net_of(inst, pin), row.net, "{it} should be on {}", row.net);
+        }
+        // and every port it claims must resolve back to it
+        for bt in &row.bterms {
+            assert_eq!(db.bterm_net(bt), row.net, "port {bt} should be on {}", row.net);
+        }
+    }
+}
+
+#[test]
 fn wire_length_runs() {
     // may be 0 on an unrouted fixture; must not panic and must be readable
     let _ = Db::open(FIXTURE).unwrap().total_wire_length();
