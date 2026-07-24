@@ -89,7 +89,32 @@ struct EcoConfig {
     insert_eco_buffers: Vec<eco::EcoBuffer>,
 }
 
-/// `insert-eco-buffers --input <in.odb> --output <out.odb> [--config <eco.json>]`.
+/// Machine-readable step contract (the Vyges/Loom step convention): identity, the CLI args, and
+/// the config schema — so an orchestrator (Sley / Loom auto-mode) can introspect a step without
+/// running it. `insert-eco-buffers --describe` emits this; every step ships the same shape.
+const INSERT_ECO_BUFFERS_DESCRIBE: &str = r#"{
+  "step": "insert-eco-buffers",
+  "summary": "Splice ECO buffers into a placed .odb (database surgery; legalization is a separate step).",
+  "librelane_equivalent": "Odb.InsertECOBuffers",
+  "unix_only": true,
+  "args": [
+    { "name": "--input",  "kind": "input",  "type": "path", "required": true,  "description": "input .odb design" },
+    { "name": "--output", "kind": "output", "type": "path", "required": true,  "description": "output .odb after ECO" },
+    { "name": "--config", "kind": "config", "type": "path", "required": false, "description": "JSON with INSERT_ECO_BUFFERS (default: no-op)" }
+  ],
+  "config_schema": {
+    "INSERT_ECO_BUFFERS": {
+      "type": "array",
+      "description": "buffers to insert; each rewires the target pin's driver through a new buffer",
+      "item": {
+        "target": { "type": "string", "description": "instance/pin to buffer, e.g. inst42/A" },
+        "buffer": { "type": "string", "description": "library cell master, e.g. sky130_fd_sc_hd__buf_2" }
+      }
+    }
+  }
+}"#;
+
+/// `insert-eco-buffers --input <in.odb> --output <out.odb> [--config <eco.json>] | --describe`.
 fn insert_eco_buffers(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
     let (mut input, mut output, mut config) = (None, None, None);
     while let Some(a) = args.next() {
@@ -97,8 +122,13 @@ fn insert_eco_buffers(mut args: impl Iterator<Item = String>) -> Result<(), Fail
             "--input" | "-i" => input = args.next(),
             "--output" | "-o" => output = args.next(),
             "--config" | "-c" => config = args.next(),
+            "--describe" => {
+                println!("{INSERT_ECO_BUFFERS_DESCRIBE}");
+                return Ok(());
+            }
             "-h" | "--help" => {
                 eprintln!("usage: vyges-openroad insert-eco-buffers --input <in.odb> --output <out.odb> --config <eco.json>");
+                eprintln!("       vyges-openroad insert-eco-buffers --describe   # JSON step contract");
                 return Ok(());
             }
             other => return Err(format!("insert-eco-buffers: unknown argument: {other}").into()),
