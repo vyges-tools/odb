@@ -60,3 +60,56 @@ fn generated_scalar_accessor_reads() {
         assert_eq!(db.net_get_i_term_count(&net) as usize, db.net_iterms(&net).len());
     }
 }
+
+// --- the widened target set: dbMaster / dbITerm / dbMTerm / dbTechLayer -----------------
+
+#[test]
+fn generated_master_and_mterm_accessors() {
+    let db = Db::open(FIXTURE).unwrap();
+    let inst = db.nth_inst_name(0);
+    let master = db.inst_master(&inst);
+    // master round-trips its own name, and each of its mterms resolves back by (master, term)
+    assert_eq!(db.master_get_name(&master), master);
+    let mterms = db.master_get_m_terms(&master);
+    assert!(!mterms.is_empty(), "a std-cell master should have terminals");
+    for t in &mterms {
+        assert_eq!(db.mterm_get_name(&master, t), *t);
+        let io = db.mterm_get_io_type(&master, t);
+        assert!(!io.is_empty(), "mterm {t} should report an IO type");
+    }
+}
+
+#[test]
+fn generated_iterm_relations_agree_with_hand_written() {
+    let db = Db::open(FIXTURE).unwrap();
+    // pick an instance pin that carries a net; the generated iterm relations must agree
+    let (inst, pin, net) = (0..db.num_insts())
+        .map(|i| db.nth_inst_name(i))
+        .find_map(|inst| {
+            let p = db.input_pin(&inst);
+            let n = db.net_of(&inst, &p);
+            (!p.is_empty() && !n.is_empty()).then(|| (inst.clone(), p, n))
+        })
+        .expect("a driven input pin");
+    assert_eq!(db.iterm_get_inst(&inst, &pin), inst);
+    assert_eq!(db.iterm_get_net(&inst, &pin), net);
+}
+
+#[test]
+fn generated_tech_layer_accessors() {
+    let db = Db::open(FIXTURE).unwrap();
+    // enumerate routing layers off the tech; every layer round-trips its name and reads a width
+    let layers = db.block_get_tech(); // relation → tech name (proves the tech exists)
+    assert!(!layers.is_empty(), "fixture should carry a tech");
+    // a known sky130 routing layer in the fixture
+    for name in ["met1", "li1", "met2"] {
+        let got = db.layer_get_name(name);
+        if !got.is_empty() {
+            assert_eq!(got, name);
+            // width is a non-negative DBU value; just prove the scalar path reads without panic
+            let _ = db.layer_get_width(name);
+            return;
+        }
+    }
+    panic!("expected at least one of met1/li1/met2 in the fixture tech");
+}

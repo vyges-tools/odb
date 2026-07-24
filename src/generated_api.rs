@@ -129,4 +129,108 @@ impl Db {
     pub fn bterm_get_mirrored_b_term(&self, bterm: &str) -> String { sys::bterm_get_mirrored_b_term(self.r(), bterm) }
     pub fn bterm_has_mirrored_b_term(&self, bterm: &str) -> bool { sys::bterm_has_mirrored_b_term(self.r(), bterm) }
     pub fn bterm_is_mirrored(&self, bterm: &str) -> bool { sys::bterm_is_mirrored(self.r(), bterm) }
+    pub fn master_get_name(&self, master: &str) -> String { sys::master_get_name(self.r(), master) }
+    pub fn master_get_const_name(&self, master: &str) -> String { sys::master_get_const_name(self.r(), master) }
+    pub fn master_get_width(&self, master: &str) -> u32 { sys::master_get_width(self.r(), master) }
+    pub fn master_get_height(&self, master: &str) -> u32 { sys::master_get_height(self.r(), master) }
+    pub fn master_is_filler(&self, master: &str) -> bool { sys::master_is_filler(self.r(), master) }
+    pub fn master_is_block(&self, master: &str) -> bool { sys::master_is_block(self.r(), master) }
+    pub fn master_is_core(&self, master: &str) -> bool { sys::master_is_core(self.r(), master) }
+    pub fn master_is_pad(&self, master: &str) -> bool { sys::master_is_pad(self.r(), master) }
+    pub fn master_is_end_cap(&self, master: &str) -> bool { sys::master_is_end_cap(self.r(), master) }
+    pub fn master_is_cover(&self, master: &str) -> bool { sys::master_is_cover(self.r(), master) }
+    pub fn master_is_core_auto_placeable(&self, master: &str) -> bool { sys::master_is_core_auto_placeable(self.r(), master) }
+    pub fn master_is_backside_bridge(&self, master: &str) -> bool { sys::master_is_backside_bridge(self.r(), master) }
+    pub fn master_get_l_e_q(&self, master: &str) -> String { sys::master_get_l_e_q(self.r(), master) }
+    pub fn master_get_e_e_q(&self, master: &str) -> String { sys::master_get_e_e_q(self.r(), master) }
+    pub fn master_get_symmetry_x(&self, master: &str) -> bool { sys::master_get_symmetry_x(self.r(), master) }
+    pub fn master_get_symmetry_y(&self, master: &str) -> bool { sys::master_get_symmetry_y(self.r(), master) }
+    pub fn master_get_symmetry_r90(&self, master: &str) -> bool { sys::master_get_symmetry_r90(self.r(), master) }
+    pub fn master_get_m_terms(&self, master: &str) -> Vec<String> { (0..sys::num_master_get_m_terms(self.r(), master)).map(|i| sys::nth_master_get_m_terms(self.r(), master, i)).collect() }
+    pub fn master_get_lib(&self, master: &str) -> String { sys::master_get_lib(self.r(), master) }
+    pub fn master_is_frozen(&self, master: &str) -> bool { sys::master_is_frozen(self.r(), master) }
+    pub fn master_is_sequential(&self, master: &str) -> bool { sys::master_is_sequential(self.r(), master) }
+    pub fn master_is_marked(&self, master: &str) -> u32 { sys::master_is_marked(self.r(), master) }
+    pub fn master_is_special_power(&self, master: &str) -> bool { sys::master_is_special_power(self.r(), master) }
+    pub fn master_get_m_term_count(&self, master: &str) -> i32 { sys::master_get_m_term_count(self.r(), master) }
+    pub fn master_get_site(&self, master: &str) -> String { sys::master_get_site(self.r(), master) }
+    pub fn master_get_master_id(&self, master: &str) -> i32 { sys::master_get_master_id(self.r(), master) }
+    pub fn iterm_get_inst(&self, inst: &str, pin: &str) -> String { sys::iterm_get_inst(self.r(), inst, pin) }
+    pub fn iterm_get_net(&self, inst: &str, pin: &str) -> String { sys::iterm_get_net(self.r(), inst, pin) }
+    pub fn iterm_get_mod_net(&self, inst: &str, pin: &str) -> String { sys::iterm_get_mod_net(self.r(), inst, pin) }
+    pub fn iterm_get_m_term(&self, inst: &str, pin: &str) -> String { sys::iterm_get_m_term(self.r(), inst, pin) }
+    pub fn iterm_get_block(&self, inst: &str, pin: &str) -> String { sys::iterm_get_block(self.r(), inst, pin) }
+    pub fn iterm_get_sig_type(&self, inst: &str, pin: &str) -> String { sys::iterm_get_sig_type(self.r(), inst, pin) }
+    pub fn iterm_get_io_type(&self, inst: &str, pin: &str) -> String { sys::iterm_get_io_type(self.r(), inst, pin) }
+    pub fn iterm_is_spef(&self, inst: &str, pin: &str) -> bool { sys::iterm_is_spef(self.r(), inst, pin) }
+    pub fn iterm_get_ext_id(&self, inst: &str, pin: &str) -> u32 { sys::iterm_get_ext_id(self.r(), inst, pin) }
+    pub fn iterm_is_special(&self, inst: &str, pin: &str) -> bool { sys::iterm_is_special(self.r(), inst, pin) }
+    pub fn iterm_is_clocked(&self, inst: &str, pin: &str) -> bool { sys::iterm_is_clocked(self.r(), inst, pin) }
+    pub fn iterm_is_set_mark(&self, inst: &str, pin: &str) -> bool { sys::iterm_is_set_mark(self.r(), inst, pin) }
+    pub fn iterm_is_connected(&self, inst: &str, pin: &str) -> bool { sys::iterm_is_connected(self.r(), inst, pin) }
+    pub fn iterm_get_b_term(&self, inst: &str, pin: &str) -> String { sys::iterm_get_b_term(self.r(), inst, pin) }
+    pub fn iterm_sta_vertex_id(&self, inst: &str, pin: &str) -> u32 { sys::iterm_sta_vertex_id(self.r(), inst, pin) }
+    pub fn mterm_get_name(&self, master: &str, term: &str) -> String { sys::mterm_get_name(self.r(), master, term) }
+    pub fn mterm_get_const_name(&self, master: &str, term: &str) -> String { sys::mterm_get_const_name(self.r(), master, term) }
+    pub fn mterm_get_sig_type(&self, master: &str, term: &str) -> String { sys::mterm_get_sig_type(self.r(), master, term) }
+    pub fn mterm_get_io_type(&self, master: &str, term: &str) -> String { sys::mterm_get_io_type(self.r(), master, term) }
+    pub fn mterm_is_set_mark(&self, master: &str, term: &str) -> bool { sys::mterm_is_set_mark(self.r(), master, term) }
+    pub fn mterm_get_master(&self, master: &str, term: &str) -> String { sys::mterm_get_master(self.r(), master, term) }
+    pub fn mterm_has_default_antenna_model(&self, master: &str, term: &str) -> bool { sys::mterm_has_default_antenna_model(self.r(), master, term) }
+    pub fn mterm_has_oxide2_antenna_model(&self, master: &str, term: &str) -> bool { sys::mterm_has_oxide2_antenna_model(self.r(), master, term) }
+    pub fn mterm_get_index(&self, master: &str, term: &str) -> i32 { sys::mterm_get_index(self.r(), master, term) }
+    pub fn layer_get_wrong_way_width(&self, layer: &str) -> u32 { sys::layer_get_wrong_way_width(self.r(), layer) }
+    pub fn layer_get_wrong_way_min_width(&self, layer: &str) -> u32 { sys::layer_get_wrong_way_min_width(self.r(), layer) }
+    pub fn layer_get_layer_adjustment(&self, layer: &str) -> f32 { sys::layer_get_layer_adjustment(self.r(), layer) }
+    pub fn layer_is_rect_only(&self, layer: &str) -> bool { sys::layer_is_rect_only(self.r(), layer) }
+    pub fn layer_is_right_way_on_grid_only(&self, layer: &str) -> bool { sys::layer_is_right_way_on_grid_only(self.r(), layer) }
+    pub fn layer_is_right_way_on_grid_only_check_mask(&self, layer: &str) -> bool { sys::layer_is_right_way_on_grid_only_check_mask(self.r(), layer) }
+    pub fn layer_is_rect_only_except_non_core_pins(&self, layer: &str) -> bool { sys::layer_is_rect_only_except_non_core_pins(self.r(), layer) }
+    pub fn layer_get_lef58_type_string(&self, layer: &str) -> String { sys::layer_get_lef58_type_string(self.r(), layer) }
+    pub fn layer_is_backside(&self, layer: &str) -> bool { sys::layer_is_backside(self.r(), layer) }
+    pub fn layer_get_name(&self, layer: &str) -> String { sys::layer_get_name(self.r(), layer) }
+    pub fn layer_get_const_name(&self, layer: &str) -> String { sys::layer_get_const_name(self.r(), layer) }
+    pub fn layer_has_alias(&self, layer: &str) -> bool { sys::layer_has_alias(self.r(), layer) }
+    pub fn layer_get_alias(&self, layer: &str) -> String { sys::layer_get_alias(self.r(), layer) }
+    pub fn layer_get_width(&self, layer: &str) -> u32 { sys::layer_get_width(self.r(), layer) }
+    pub fn layer_get_spacing(&self, layer: &str) -> i32 { sys::layer_get_spacing(self.r(), layer) }
+    pub fn layer_get_num_masks(&self, layer: &str) -> u32 { sys::layer_get_num_masks(self.r(), layer) }
+    pub fn layer_has_v55_spacing_rules(&self, layer: &str) -> bool { sys::layer_has_v55_spacing_rules(self.r(), layer) }
+    pub fn layer_has_two_widths_spacing_rules(&self, layer: &str) -> bool { sys::layer_has_two_widths_spacing_rules(self.r(), layer) }
+    pub fn layer_get_two_widths_spacing_table_num_widths(&self, layer: &str) -> u32 { sys::layer_get_two_widths_spacing_table_num_widths(self.r(), layer) }
+    pub fn layer_has_default_antenna_rule(&self, layer: &str) -> bool { sys::layer_has_default_antenna_rule(self.r(), layer) }
+    pub fn layer_has_oxide2_antenna_rule(&self, layer: &str) -> bool { sys::layer_has_oxide2_antenna_rule(self.r(), layer) }
+    pub fn layer_get_pitch(&self, layer: &str) -> i32 { sys::layer_get_pitch(self.r(), layer) }
+    pub fn layer_get_pitch_x(&self, layer: &str) -> i32 { sys::layer_get_pitch_x(self.r(), layer) }
+    pub fn layer_get_pitch_y(&self, layer: &str) -> i32 { sys::layer_get_pitch_y(self.r(), layer) }
+    pub fn layer_get_first_last_pitch(&self, layer: &str) -> i32 { sys::layer_get_first_last_pitch(self.r(), layer) }
+    pub fn layer_has_x_y_pitch(&self, layer: &str) -> bool { sys::layer_has_x_y_pitch(self.r(), layer) }
+    pub fn layer_get_offset(&self, layer: &str) -> i32 { sys::layer_get_offset(self.r(), layer) }
+    pub fn layer_get_offset_x(&self, layer: &str) -> i32 { sys::layer_get_offset_x(self.r(), layer) }
+    pub fn layer_get_offset_y(&self, layer: &str) -> i32 { sys::layer_get_offset_y(self.r(), layer) }
+    pub fn layer_has_x_y_offset(&self, layer: &str) -> bool { sys::layer_has_x_y_offset(self.r(), layer) }
+    pub fn layer_has_area(&self, layer: &str) -> bool { sys::layer_has_area(self.r(), layer) }
+    pub fn layer_has_max_width(&self, layer: &str) -> bool { sys::layer_has_max_width(self.r(), layer) }
+    pub fn layer_get_max_width(&self, layer: &str) -> u32 { sys::layer_get_max_width(self.r(), layer) }
+    pub fn layer_get_min_width(&self, layer: &str) -> u32 { sys::layer_get_min_width(self.r(), layer) }
+    pub fn layer_has_min_step(&self, layer: &str) -> bool { sys::layer_has_min_step(self.r(), layer) }
+    pub fn layer_get_min_step(&self, layer: &str) -> u32 { sys::layer_get_min_step(self.r(), layer) }
+    pub fn layer_has_min_step_max_length(&self, layer: &str) -> bool { sys::layer_has_min_step_max_length(self.r(), layer) }
+    pub fn layer_get_min_step_max_length(&self, layer: &str) -> u32 { sys::layer_get_min_step_max_length(self.r(), layer) }
+    pub fn layer_has_min_step_max_edges(&self, layer: &str) -> bool { sys::layer_has_min_step_max_edges(self.r(), layer) }
+    pub fn layer_get_min_step_max_edges(&self, layer: &str) -> u32 { sys::layer_get_min_step_max_edges(self.r(), layer) }
+    pub fn layer_has_protrusion(&self, layer: &str) -> bool { sys::layer_has_protrusion(self.r(), layer) }
+    pub fn layer_get_protrusion_width(&self, layer: &str) -> u32 { sys::layer_get_protrusion_width(self.r(), layer) }
+    pub fn layer_get_protrusion_length(&self, layer: &str) -> u32 { sys::layer_get_protrusion_length(self.r(), layer) }
+    pub fn layer_get_protrusion_from_width(&self, layer: &str) -> u32 { sys::layer_get_protrusion_from_width(self.r(), layer) }
+    pub fn layer_get_resistance(&self, layer: &str) -> f64 { sys::layer_get_resistance(self.r(), layer) }
+    pub fn layer_get_capacitance(&self, layer: &str) -> f64 { sys::layer_get_capacitance(self.r(), layer) }
+    pub fn layer_get_edge_capacitance(&self, layer: &str) -> f64 { sys::layer_get_edge_capacitance(self.r(), layer) }
+    pub fn layer_get_wire_extension(&self, layer: &str) -> u32 { sys::layer_get_wire_extension(self.r(), layer) }
+    pub fn layer_get_number(&self, layer: &str) -> i32 { sys::layer_get_number(self.r(), layer) }
+    pub fn layer_get_routing_level(&self, layer: &str) -> i32 { sys::layer_get_routing_level(self.r(), layer) }
+    pub fn layer_get_lower_layer(&self, layer: &str) -> String { sys::layer_get_lower_layer(self.r(), layer) }
+    pub fn layer_get_upper_layer(&self, layer: &str) -> String { sys::layer_get_upper_layer(self.r(), layer) }
+    pub fn layer_get_tech(&self, layer: &str) -> String { sys::layer_get_tech(self.r(), layer) }
+    pub fn layer_has_orth_spacing_table(&self, layer: &str) -> bool { sys::layer_has_orth_spacing_table(self.r(), layer) }
 }
