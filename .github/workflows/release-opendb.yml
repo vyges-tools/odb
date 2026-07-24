@@ -69,9 +69,12 @@ jobs:
         # No --locked: Cargo.lock is gitignored in this repo, and the [patch] resolves
         # vyges-opendb-lib to the freshly-checked-out opendb-lib@main sibling — let Cargo resolve.
         # macOS: put the (keg-only, newer) brew bison ahead of the 2.x system one for the LEF/DEF parsers.
+        # --features gen-write: ship the full generated write (setter) surface too — the L2/write
+        # governance gate lives at the `vyges mcp` layer (the `set` command self-declares level L2),
+        # not in the binary. Instrumentation needs the read->write->read loop over arbitrary fields.
         run: |
           [ "${{ runner.os }}" = "macOS" ] && export PATH="$(brew --prefix bison)/bin:$PATH"
-          cargo build --release --bin vyges-opendb
+          cargo build --release --features gen-write --bin vyges-opendb
 
       - name: Package vyges-opendb-${{ matrix.target }}.tar.gz
         id: pkg
