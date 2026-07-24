@@ -148,10 +148,23 @@ fn diodes_on_ports_step() {
 }
 
 #[test]
+fn obstruction_steps() {
+    let mut db = Db::open(FIXTURE).unwrap();
+    let n0 = db.num_obstructions();
+    db.add_obstruction("met1", 0, 0, 1_000, 1_000).unwrap();
+    db.add_obstruction("met2", 0, 0, 1_000, 1_000).unwrap();
+    assert_eq!(db.num_obstructions(), n0 + 2);
+    let removed = db.clear_obstructions();
+    assert_eq!(removed, n0 + 2);
+    assert_eq!(db.num_obstructions(), 0);
+}
+
+#[test]
 fn errors_are_typed() {
     let mut db = Db::open(FIXTURE).unwrap();
     assert!(db.create_inst("no_such_master", "x").is_err());
     assert!(db.insert_buffer("no_inst", "A", "no_master", "b", 0, 0).is_err());
     assert!(db.insert_diode("no_inst", "A", "no_master", "d", 0, 0).is_err());
     assert!(db.set_inst_orient("no_inst", "R0").is_err());
+    assert!(db.add_obstruction("no_such_layer", 0, 0, 1, 1).is_err());
 }

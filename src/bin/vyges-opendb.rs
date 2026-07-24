@@ -47,6 +47,15 @@ commands:
   report-disconnected-pins  --input <f.odb>
                       Print a JSON list of pins/ports with no net (report).
 
+  set-power-connections     --input <in.odb> --output <out.odb> [--config <cfg.json>]
+                      Wire instance pins to (power) nets (SET_POWER_CONNECTIONS in the config).
+
+  add-obstructions          --input <in.odb> --output <out.odb> [--config <cfg.json>]
+                      Add routing/PDN obstruction rects (OBSTRUCTIONS in the config).
+
+  remove-obstructions       --input <in.odb> --output <out.odb>
+                      Remove all obstructions.
+
   --version, -V       Print the version.
   --help,    -h       Print this help.
 ";
@@ -70,6 +79,9 @@ fn run() -> Result<(), Fail> {
         "diodes-on-ports" => diodes_on_ports(args),
         "cell-frequency-tables" => cell_frequency_tables(args),
         "report-disconnected-pins" => report_disconnected_pins(args),
+        "set-power-connections" => set_power_connections(args),
+        "add-obstructions" => add_obstructions(args),
+        "remove-obstructions" => remove_obstructions(args),
         "-V" | "--version" => {
             println!("vyges-opendb {}", env!("CARGO_PKG_VERSION"));
             Ok(())
@@ -490,5 +502,150 @@ fn report_disconnected_pins(mut args: impl Iterator<Item = String>) -> Result<()
     let pins = report::disconnected_pins(&db);
     eprintln!("report-disconnected-pins: {} disconnected", pins.len());
     println!("{}", serde_json::to_string_pretty(&pins)?);
+    Ok(())
+}
+
+#[derive(Deserialize, Default)]
+struct PowerConnectionsConfig {
+    #[serde(rename = "SET_POWER_CONNECTIONS", default)]
+    set_power_connections: Vec<eco::PowerConnection>,
+}
+
+const SET_POWER_CONNECTIONS_DESCRIBE: &str = r#"{
+  "step": "set-power-connections",
+  "summary": "Wire instance pins to (power) nets in a .odb (database surgery).",
+  "librelane_equivalent": "Odb.SetPowerConnections",
+  "unix_only": true,
+  "args": [
+    { "name": "--input",  "kind": "input",  "type": "path", "required": true,  "description": "input .odb design" },
+    { "name": "--output", "kind": "output", "type": "path", "required": true,  "description": "output .odb" },
+    { "name": "--config", "kind": "config", "type": "path", "required": false, "description": "JSON with SET_POWER_CONNECTIONS (default: no-op)" }
+  ],
+  "config_schema": {
+    "SET_POWER_CONNECTIONS": {
+      "type": "array",
+      "item": {
+        "instance": { "type": "string", "description": "instance name" },
+        "pin":      { "type": "string", "description": "power/ground pin, e.g. VPWR" },
+        "net":      { "type": "string", "description": "net to connect it to, e.g. VDD" }
+      }
+    }
+  }
+}"#;
+
+/// `set-power-connections --input <in.odb> --output <out.odb> [--config <cfg.json>] | --describe`.
+fn set_power_connections(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
+    let (mut input, mut output, mut config) = (None, None, None);
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--input" | "-i" => input = args.next(),
+            "--output" | "-o" => output = args.next(),
+            "--config" | "-c" => config = args.next(),
+            "--describe" => {
+                println!("{SET_POWER_CONNECTIONS_DESCRIBE}");
+                return Ok(());
+            }
+            "-h" | "--help" => {
+                eprintln!("usage: vyges-opendb set-power-connections --input <in.odb> --output <out.odb> --config <cfg.json>");
+                return Ok(());
+            }
+            other => return Err(format!("set-power-connections: unknown argument: {other}").into()),
+        }
+    }
+    let input = input.ok_or("set-power-connections: --input <in.odb> required")?;
+    let output = output.ok_or("set-power-connections: --output <out.odb> required")?;
+    let cfg: PowerConnectionsConfig = match config {
+        Some(p) => serde_json::from_str(&std::fs::read_to_string(&p)?)?,
+        None => PowerConnectionsConfig::default(),
+    };
+    let mut db = Db::open(&input)?;
+    let n = eco::set_power_connections(&mut db, &cfg.set_power_connections)?;
+    db.write(&output)?;
+    eprintln!("set-power-connections: connected {n} pin(s), {input} -> {output}");
+    Ok(())
+}
+
+#[derive(Deserialize, Default)]
+struct ObstructionsConfig {
+    #[serde(rename = "OBSTRUCTIONS", default)]
+    obstructions: Vec<eco::Obstruction>,
+}
+
+const ADD_OBSTRUCTIONS_DESCRIBE: &str = r#"{
+  "step": "add-obstructions",
+  "summary": "Add routing/PDN obstruction rectangles to a .odb (database surgery).",
+  "librelane_equivalent": "Odb.AddPDNObstructions / Odb.AddRoutingObstructions",
+  "unix_only": true,
+  "args": [
+    { "name": "--input",  "kind": "input",  "type": "path", "required": true,  "description": "input .odb design" },
+    { "name": "--output", "kind": "output", "type": "path", "required": true,  "description": "output .odb" },
+    { "name": "--config", "kind": "config", "type": "path", "required": false, "description": "JSON with OBSTRUCTIONS (default: no-op)" }
+  ],
+  "config_schema": {
+    "OBSTRUCTIONS": {
+      "type": "array",
+      "item": {
+        "layer": { "type": "string",  "description": "tech layer name, e.g. met1" },
+        "llx":   { "type": "integer", "description": "lower-left x (DBU)" },
+        "lly":   { "type": "integer", "description": "lower-left y (DBU)" },
+        "urx":   { "type": "integer", "description": "upper-right x (DBU)" },
+        "ury":   { "type": "integer", "description": "upper-right y (DBU)" }
+      }
+    }
+  }
+}"#;
+
+/// `add-obstructions --input <in.odb> --output <out.odb> [--config <cfg.json>] | --describe`.
+fn add_obstructions(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
+    let (mut input, mut output, mut config) = (None, None, None);
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--input" | "-i" => input = args.next(),
+            "--output" | "-o" => output = args.next(),
+            "--config" | "-c" => config = args.next(),
+            "--describe" => {
+                println!("{ADD_OBSTRUCTIONS_DESCRIBE}");
+                return Ok(());
+            }
+            "-h" | "--help" => {
+                eprintln!("usage: vyges-opendb add-obstructions --input <in.odb> --output <out.odb> --config <cfg.json>");
+                return Ok(());
+            }
+            other => return Err(format!("add-obstructions: unknown argument: {other}").into()),
+        }
+    }
+    let input = input.ok_or("add-obstructions: --input <in.odb> required")?;
+    let output = output.ok_or("add-obstructions: --output <out.odb> required")?;
+    let cfg: ObstructionsConfig = match config {
+        Some(p) => serde_json::from_str(&std::fs::read_to_string(&p)?)?,
+        None => ObstructionsConfig::default(),
+    };
+    let mut db = Db::open(&input)?;
+    let n = eco::add_obstructions(&mut db, &cfg.obstructions)?;
+    db.write(&output)?;
+    eprintln!("add-obstructions: added {n} obstruction(s), {input} -> {output}");
+    Ok(())
+}
+
+/// `remove-obstructions --input <in.odb> --output <out.odb>` — clear all obstructions.
+fn remove_obstructions(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
+    let (mut input, mut output) = (None, None);
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--input" | "-i" => input = args.next(),
+            "--output" | "-o" => output = args.next(),
+            "-h" | "--help" => {
+                eprintln!("usage: vyges-opendb remove-obstructions --input <in.odb> --output <out.odb>");
+                return Ok(());
+            }
+            other => return Err(format!("remove-obstructions: unknown argument: {other}").into()),
+        }
+    }
+    let input = input.ok_or("remove-obstructions: --input <in.odb> required")?;
+    let output = output.ok_or("remove-obstructions: --output <out.odb> required")?;
+    let mut db = Db::open(&input)?;
+    let n = eco::remove_obstructions(&mut db);
+    db.write(&output)?;
+    eprintln!("remove-obstructions: removed {n} obstruction(s), {input} -> {output}");
     Ok(())
 }

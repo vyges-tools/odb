@@ -136,6 +136,14 @@ impl Db {
     pub fn set_inst_orient(&mut self, inst: &str, orient: &str) -> Result<()> {
         Ok(sys::set_inst_orient(self.r(), inst, orient)?)
     }
+    /// Add a routing/PDN obstruction rectangle on `layer` (DBU). Errors if the layer is unknown.
+    pub fn add_obstruction(&mut self, layer: &str, x1: i32, y1: i32, x2: i32, y2: i32) -> Result<()> {
+        Ok(sys::add_obstruction(self.r(), layer, x1, y1, x2, y2)?)
+    }
+    /// Number of obstructions currently in the block.
+    pub fn num_obstructions(&self) -> usize { sys::num_obstructions(self.r()) }
+    /// Destroy all obstructions; returns the count removed.
+    pub fn clear_obstructions(&mut self) -> usize { sys::clear_obstructions(self.r()) }
     pub fn connect(&mut self, inst: &str, pin: &str, net: &str) -> Result<()> {
         Ok(sys::connect(self.r(), inst, pin, net)?)
     }

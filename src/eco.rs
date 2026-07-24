@@ -99,6 +99,50 @@ pub fn manual_macro_placement(db: &mut Db, specs: &[MacroPlacement]) -> Result<u
     Ok(specs.len())
 }
 
+/// One entry of the `SET_POWER_CONNECTIONS` config: wire an instance pin to a (power) net.
+#[derive(Debug, Clone, Deserialize)]
+pub struct PowerConnection {
+    pub instance: String,
+    pub pin: String,
+    pub net: String,
+}
+
+/// Apply `SetPowerConnections`: connect each listed instance pin to its (special/power) net.
+/// Returns the count. Mirrors LibreLane's `Odb.SetPowerConnections` — here the PWR/GND pin→net
+/// mapping is provided explicitly (from Flow IR) rather than auto-derived from the PDN.
+pub fn set_power_connections(db: &mut Db, specs: &[PowerConnection]) -> Result<usize> {
+    for spec in specs {
+        db.connect(&spec.instance, &spec.pin, &spec.net)?;
+    }
+    Ok(specs.len())
+}
+
+/// One obstruction rectangle on a tech layer (DBU corners).
+#[derive(Debug, Clone, Deserialize)]
+pub struct Obstruction {
+    pub layer: String,
+    pub llx: i32,
+    pub lly: i32,
+    pub urx: i32,
+    pub ury: i32,
+}
+
+/// Add obstruction rectangles. Covers LibreLane's `Odb.AddPDNObstructions` **and**
+/// `Odb.AddRoutingObstructions` — both create `dbObstruction`s; the PDN-vs-routing distinction is
+/// only which layers you list. Returns the count added.
+pub fn add_obstructions(db: &mut Db, specs: &[Obstruction]) -> Result<usize> {
+    for o in specs {
+        db.add_obstruction(&o.layer, o.llx, o.lly, o.urx, o.ury)?;
+    }
+    Ok(specs.len())
+}
+
+/// Remove all obstructions. Covers `Odb.RemovePDNObstructions` / `Odb.RemoveRoutingObstructions`.
+/// Returns the count removed.
+pub fn remove_obstructions(db: &mut Db) -> usize {
+    db.clear_obstructions()
+}
+
 /// The `DIODES_ON_PORTS` config: the diode cell, and optionally specific ports (default: all).
 #[derive(Debug, Clone, Deserialize)]
 pub struct DiodesOnPorts {
