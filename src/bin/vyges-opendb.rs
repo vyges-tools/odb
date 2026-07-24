@@ -32,6 +32,12 @@ commands:
   insert-eco-diodes   --input <in.odb> --output <out.odb> [--config <eco.json>]
                       Tie antenna diodes (INSERT_ECO_DIODES in the config) onto target nets.
 
+  manual-global-placement  --input <in.odb> --output <out.odb> [--config <cfg.json>]
+                      Set instance origins (MANUAL_GLOBAL_PLACEMENT in the config).
+
+  manual-macro-placement   --input <in.odb> --output <out.odb> [--config <cfg.json>]
+                      Place + orient macros (MANUAL_MACRO_PLACEMENT in the config).
+
   --version, -V       Print the version.
   --help,    -h       Print this help.
 ";
@@ -50,6 +56,8 @@ fn run() -> Result<(), Fail> {
         "info" => info(args),
         "insert-eco-buffers" => insert_eco_buffers(args),
         "insert-eco-diodes" => insert_eco_diodes(args),
+        "manual-global-placement" => manual_global_placement(args),
+        "manual-macro-placement" => manual_macro_placement(args),
         "-V" | "--version" => {
             println!("vyges-opendb {}", env!("CARGO_PKG_VERSION"));
             Ok(())
@@ -211,5 +219,130 @@ fn insert_eco_diodes(mut args: impl Iterator<Item = String>) -> Result<(), Fail>
     let n = eco::insert_eco_diodes(&mut db, &cfg.insert_eco_diodes)?;
     db.write(&output)?;
     eprintln!("insert-eco-diodes: inserted {n} diode(s), {input} -> {output}");
+    Ok(())
+}
+
+#[derive(Deserialize, Default)]
+struct GlobalPlacementConfig {
+    #[serde(rename = "MANUAL_GLOBAL_PLACEMENT", default)]
+    manual_global_placement: Vec<eco::GlobalPlacement>,
+}
+
+const MANUAL_GLOBAL_PLACEMENT_DESCRIBE: &str = r#"{
+  "step": "manual-global-placement",
+  "summary": "Set instance origins in a .odb before global placement (database surgery).",
+  "librelane_equivalent": "Odb.ManualGlobalPlacement",
+  "unix_only": true,
+  "args": [
+    { "name": "--input",  "kind": "input",  "type": "path", "required": true,  "description": "input .odb design" },
+    { "name": "--output", "kind": "output", "type": "path", "required": true,  "description": "output .odb after placement" },
+    { "name": "--config", "kind": "config", "type": "path", "required": false, "description": "JSON with MANUAL_GLOBAL_PLACEMENT (default: no-op)" }
+  ],
+  "config_schema": {
+    "MANUAL_GLOBAL_PLACEMENT": {
+      "type": "array",
+      "description": "instances to fix at an origin",
+      "item": {
+        "instance": { "type": "string",  "description": "instance name" },
+        "x":        { "type": "integer", "description": "origin x in DBU" },
+        "y":        { "type": "integer", "description": "origin y in DBU" }
+      }
+    }
+  }
+}"#;
+
+/// `manual-global-placement --input <in.odb> --output <out.odb> [--config <cfg.json>] | --describe`.
+fn manual_global_placement(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
+    let (mut input, mut output, mut config) = (None, None, None);
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--input" | "-i" => input = args.next(),
+            "--output" | "-o" => output = args.next(),
+            "--config" | "-c" => config = args.next(),
+            "--describe" => {
+                println!("{MANUAL_GLOBAL_PLACEMENT_DESCRIBE}");
+                return Ok(());
+            }
+            "-h" | "--help" => {
+                eprintln!("usage: vyges-opendb manual-global-placement --input <in.odb> --output <out.odb> --config <cfg.json>");
+                return Ok(());
+            }
+            other => return Err(format!("manual-global-placement: unknown argument: {other}").into()),
+        }
+    }
+    let input = input.ok_or("manual-global-placement: --input <in.odb> required")?;
+    let output = output.ok_or("manual-global-placement: --output <out.odb> required")?;
+    let cfg: GlobalPlacementConfig = match config {
+        Some(p) => serde_json::from_str(&std::fs::read_to_string(&p)?)?,
+        None => GlobalPlacementConfig::default(),
+    };
+
+    let mut db = Db::open(&input)?;
+    let n = eco::manual_global_placement(&mut db, &cfg.manual_global_placement)?;
+    db.write(&output)?;
+    eprintln!("manual-global-placement: placed {n} instance(s), {input} -> {output}");
+    Ok(())
+}
+
+#[derive(Deserialize, Default)]
+struct MacroPlacementConfig {
+    #[serde(rename = "MANUAL_MACRO_PLACEMENT", default)]
+    manual_macro_placement: Vec<eco::MacroPlacement>,
+}
+
+const MANUAL_MACRO_PLACEMENT_DESCRIBE: &str = r#"{
+  "step": "manual-macro-placement",
+  "summary": "Place + orient macros in a .odb (database surgery).",
+  "librelane_equivalent": "Odb.ManualMacroPlacement",
+  "unix_only": true,
+  "args": [
+    { "name": "--input",  "kind": "input",  "type": "path", "required": true,  "description": "input .odb design" },
+    { "name": "--output", "kind": "output", "type": "path", "required": true,  "description": "output .odb after placement" },
+    { "name": "--config", "kind": "config", "type": "path", "required": false, "description": "JSON with MANUAL_MACRO_PLACEMENT (default: no-op)" }
+  ],
+  "config_schema": {
+    "MANUAL_MACRO_PLACEMENT": {
+      "type": "array",
+      "description": "macros to place + orient",
+      "item": {
+        "instance": { "type": "string",  "description": "macro instance name" },
+        "x":        { "type": "integer", "description": "origin x in DBU" },
+        "y":        { "type": "integer", "description": "origin y in DBU" },
+        "orient":   { "type": "string",  "description": "R0/R90/R180/R270/MX/MY/MXR90/MYR90 (optional)" }
+      }
+    }
+  }
+}"#;
+
+/// `manual-macro-placement --input <in.odb> --output <out.odb> [--config <cfg.json>] | --describe`.
+fn manual_macro_placement(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
+    let (mut input, mut output, mut config) = (None, None, None);
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--input" | "-i" => input = args.next(),
+            "--output" | "-o" => output = args.next(),
+            "--config" | "-c" => config = args.next(),
+            "--describe" => {
+                println!("{MANUAL_MACRO_PLACEMENT_DESCRIBE}");
+                return Ok(());
+            }
+            "-h" | "--help" => {
+                eprintln!("usage: vyges-opendb manual-macro-placement --input <in.odb> --output <out.odb> --config <cfg.json>");
+                return Ok(());
+            }
+            other => return Err(format!("manual-macro-placement: unknown argument: {other}").into()),
+        }
+    }
+    let input = input.ok_or("manual-macro-placement: --input <in.odb> required")?;
+    let output = output.ok_or("manual-macro-placement: --output <out.odb> required")?;
+    let cfg: MacroPlacementConfig = match config {
+        Some(p) => serde_json::from_str(&std::fs::read_to_string(&p)?)?,
+        None => MacroPlacementConfig::default(),
+    };
+
+    let mut db = Db::open(&input)?;
+    let n = eco::manual_macro_placement(&mut db, &cfg.manual_macro_placement)?;
+    db.write(&output)?;
+    eprintln!("manual-macro-placement: placed {n} macro(s), {input} -> {output}");
     Ok(())
 }

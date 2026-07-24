@@ -110,6 +110,10 @@ impl Db {
     pub fn set_inst_location(&mut self, inst: &str, x: i32, y: i32) -> Result<()> {
         Ok(sys::set_inst_location(self.r(), inst, x, y)?)
     }
+    /// Set an instance's orientation (`R0`/`R90`/`R180`/`R270`/`MX`/`MY`/`MXR90`/`MYR90`).
+    pub fn set_inst_orient(&mut self, inst: &str, orient: &str) -> Result<()> {
+        Ok(sys::set_inst_orient(self.r(), inst, orient)?)
+    }
     pub fn connect(&mut self, inst: &str, pin: &str, net: &str) -> Result<()> {
         Ok(sys::connect(self.r(), inst, pin, net)?)
     }

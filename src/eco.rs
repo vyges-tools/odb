@@ -58,3 +58,43 @@ pub fn insert_eco_diodes(db: &mut Db, specs: &[EcoDiode]) -> Result<usize> {
     }
     Ok(specs.len())
 }
+
+/// One entry of the `MANUAL_GLOBAL_PLACEMENT` config: an instance and its origin (DBU).
+#[derive(Debug, Clone, Deserialize)]
+pub struct GlobalPlacement {
+    pub instance: String,
+    pub x: i32,
+    pub y: i32,
+}
+
+/// Apply `ManualGlobalPlacement`: set each listed instance's origin. Returns the count placed.
+/// Mirrors LibreLane's `Odb.ManualGlobalPlacement` — fixes specific cells before global placement.
+pub fn manual_global_placement(db: &mut Db, specs: &[GlobalPlacement]) -> Result<usize> {
+    for spec in specs {
+        db.set_inst_location(&spec.instance, spec.x, spec.y)?;
+    }
+    Ok(specs.len())
+}
+
+/// One entry of the `MANUAL_MACRO_PLACEMENT` config: instance, origin (DBU), and orientation.
+#[derive(Debug, Clone, Deserialize)]
+pub struct MacroPlacement {
+    pub instance: String,
+    pub x: i32,
+    pub y: i32,
+    /// `R0`/`R90`/`R180`/`R270`/`MX`/`MY`/`MXR90`/`MYR90`; omitted leaves the orientation as-is.
+    #[serde(default)]
+    pub orient: Option<String>,
+}
+
+/// Apply `ManualMacroPlacement`: place each macro at its origin + orientation. Returns the count.
+/// Mirrors LibreLane's `Odb.ManualMacroPlacement` (macros are placed + oriented before the flow).
+pub fn manual_macro_placement(db: &mut Db, specs: &[MacroPlacement]) -> Result<usize> {
+    for spec in specs {
+        db.set_inst_location(&spec.instance, spec.x, spec.y)?;
+        if let Some(orient) = &spec.orient {
+            db.set_inst_orient(&spec.instance, orient)?;
+        }
+    }
+    Ok(specs.len())
+}

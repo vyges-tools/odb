@@ -101,9 +101,39 @@ fn insert_eco_diodes_step() {
 }
 
 #[test]
+fn manual_placement_steps() {
+    use vyges_opendb::eco::{
+        manual_global_placement, manual_macro_placement, GlobalPlacement, MacroPlacement,
+    };
+    let mut db = Db::open(FIXTURE).unwrap();
+    let inst = db.nth_inst_name(0);
+
+    let n = manual_global_placement(
+        &mut db,
+        &[GlobalPlacement { instance: inst.clone(), x: 12_345, y: 67_890 }],
+    )
+    .unwrap();
+    assert_eq!(n, 1);
+    assert_eq!(db.inst_location(&inst), (12_345, 67_890));
+
+    // macro placement + orient; location moves and survives serialization
+    manual_macro_placement(
+        &mut db,
+        &[MacroPlacement { instance: inst.clone(), x: 1_000, y: 2_000, orient: Some("R0".into()) }],
+    )
+    .unwrap();
+    assert_eq!(db.inst_location(&inst), (1_000, 2_000));
+
+    let out = std::env::temp_dir().join("vyges_opendb_place.odb");
+    db.write(&out).unwrap();
+    assert_eq!(Db::open(&out).unwrap().inst_location(&inst), (1_000, 2_000));
+}
+
+#[test]
 fn errors_are_typed() {
     let mut db = Db::open(FIXTURE).unwrap();
     assert!(db.create_inst("no_such_master", "x").is_err());
     assert!(db.insert_buffer("no_inst", "A", "no_master", "b", 0, 0).is_err());
     assert!(db.insert_diode("no_inst", "A", "no_master", "d", 0, 0).is_err());
+    assert!(db.set_inst_orient("no_inst", "R0").is_err());
 }
