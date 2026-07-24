@@ -272,3 +272,7 @@ impl Db {
         Ok(())
     }
 }
+
+// Machine-generated read accessors (scripts/generate-bindings.py) — a second `impl Db` block.
+#[cfg(unix)]
+include!("generated_api.rs");
