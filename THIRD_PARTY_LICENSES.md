@@ -1,7 +1,7 @@
 # Third-party licenses
 
-The `vyges-openroad` binary statically links the following components. Their versions track
-the pins in [`vyges-tools/odb-sys`](https://github.com/vyges-tools/odb-sys)
+The `vyges-opendb` binary statically links the following components. Their versions track
+the pins in [`vyges-tools/opendb-lib`](https://github.com/vyges-tools/opendb-lib)
 (`openroad-pin.yaml`); this file is included in every release archive for binary-distribution
 compliance. Full upstream license texts are at the linked repositories.
 
@@ -13,6 +13,6 @@ compliance. Full upstream license texts are at the linked repositories.
 | Abseil     | 20250127.0  | Apache-2.0 | https://github.com/abseil/abseil-cpp |
 | zlib (dynamic) | system  | zlib       | https://zlib.net |
 
-`vyges-openroad` itself is Apache-2.0 (see `LICENSE`). OpenROAD-derived code (`libodb`) is
+`vyges-opendb` itself is Apache-2.0 (see `LICENSE`). OpenROAD-derived code (`libodb`) is
 BSD-3-Clause; its copyright notice and license text are reproduced per that license — see
-`NOTICE` and the `OPENROAD-LICENSE-BSD3.txt` shipped in the `vyges-tools/odb-sys` libodb bundle.
+`NOTICE` and the `OPENROAD-LICENSE-BSD3.txt` shipped in the `vyges-tools/opendb-lib` libodb bundle.

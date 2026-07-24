@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-//! `vyges-openroad` — the OpenROAD integration CLI shipped by `vyges install openroad`.
+//! `vyges-opendb` — OpenROAD's OpenDB (libodb) design-database CLI, shipped by `vyges install opendb`.
 //!
-//! A thin multi-tool over the safe [`vyges_odb`] API (OpenROAD's OpenDB / libodb). Unix-only:
+//! A thin multi-tool over the safe [`vyges_opendb`] API (OpenROAD's OpenDB / libodb). Unix-only:
 //! libodb is native C++ and is not built on non-unix targets.
 //!
 //! Subcommands:
@@ -12,15 +12,15 @@
 //! Arg parsing is deliberately hand-rolled (no clap) to match the rest of the suite and keep
 //! the dependency surface minimal.
 use serde::Deserialize;
-use vyges_odb::{eco, Db};
+use vyges_opendb::{eco, Db};
 
 type Fail = Box<dyn std::error::Error>;
 
 const USAGE: &str = "\
-vyges-openroad — OpenROAD (libodb) integration for Vyges
+vyges-opendb — OpenROAD's OpenDB (libodb) design database
 
 usage:
-  vyges-openroad <command> [options]
+  vyges-opendb <command> [options]
 
 commands:
   info                --input <f.odb>
@@ -35,7 +35,7 @@ commands:
 
 fn main() {
     if let Err(e) = run() {
-        eprintln!("vyges-openroad: error: {e}");
+        eprintln!("vyges-opendb: error: {e}");
         std::process::exit(1);
     }
 }
@@ -47,14 +47,14 @@ fn run() -> Result<(), Fail> {
         "info" => info(args),
         "insert-eco-buffers" => insert_eco_buffers(args),
         "-V" | "--version" => {
-            println!("vyges-openroad {}", env!("CARGO_PKG_VERSION"));
+            println!("vyges-opendb {}", env!("CARGO_PKG_VERSION"));
             Ok(())
         }
         "" | "-h" | "--help" => {
             print!("{USAGE}");
             Ok(())
         }
-        other => Err(format!("unknown command '{other}'. Try 'vyges-openroad --help'.").into()),
+        other => Err(format!("unknown command '{other}'. Try 'vyges-opendb --help'.").into()),
     }
 }
 
@@ -65,7 +65,7 @@ fn info(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
         match a.as_str() {
             "--input" | "-i" => input = args.next(),
             "-h" | "--help" => {
-                eprintln!("usage: vyges-openroad info --input <f.odb>");
+                eprintln!("usage: vyges-opendb info --input <f.odb>");
                 return Ok(());
             }
             other => return Err(format!("info: unknown argument: {other}").into()),
@@ -127,8 +127,8 @@ fn insert_eco_buffers(mut args: impl Iterator<Item = String>) -> Result<(), Fail
                 return Ok(());
             }
             "-h" | "--help" => {
-                eprintln!("usage: vyges-openroad insert-eco-buffers --input <in.odb> --output <out.odb> --config <eco.json>");
-                eprintln!("       vyges-openroad insert-eco-buffers --describe   # JSON step contract");
+                eprintln!("usage: vyges-opendb insert-eco-buffers --input <in.odb> --output <out.odb> --config <eco.json>");
+                eprintln!("       vyges-opendb insert-eco-buffers --describe   # JSON step contract");
                 return Ok(());
             }
             other => return Err(format!("insert-eco-buffers: unknown argument: {other}").into()),

@@ -1,7 +1,7 @@
-# vyges-odb
+# vyges-opendb
 
 A safe, ergonomic Rust API over OpenROAD's OpenDB (`libodb`), built on the low-level
-[`vyges-odb-sys`](https://github.com/vyges-tools/odb-sys) FFI — no Tcl, no SWIG, no
+[`vyges-opendb-lib`](https://github.com/vyges-tools/opendb-lib) FFI — no Tcl, no SWIG, no
 OpenROAD engines. Runs on linux/x86_64, linux/arm64, and macOS/Apple Silicon.
 
 > Part of Vyges Loom. This is the layer Loom steps and the ECO applier use — idiomatic Rust
@@ -10,7 +10,7 @@ OpenROAD engines. Runs on linux/x86_64, linux/arm64, and macOS/Apple Silicon.
 ## API
 
 ```rust
-use vyges_odb::Db;
+use vyges_opendb::Db;
 
 let mut db = Db::open("design.odb")?;
 println!("{} — {} insts", db.block_name(), db.num_insts());
@@ -23,7 +23,7 @@ db.write("design_eco.odb")?;
 ```
 
 - `&self` for reads, `&mut self` for edits — the borrow checker enforces no read-while-mutate.
-- Errors are typed (`vyges_odb::Error`) and carry the OpenDB message.
+- Errors are typed (`vyges_opendb::Error`) and carry the OpenDB message.
 - Write primitives: `create_net`, `create_inst`, `set_inst_location`, `connect`, `disconnect`,
   plus the composed `insert_buffer` — the `InsertECOBuffers` building blocks.
 
@@ -33,11 +33,11 @@ db.write("design_eco.odb")?;
 cargo test
 ```
 
-The first build compiles a standalone `libodb` via `vyges-odb-sys` (which sparse-checks-out the
+The first build compiles a standalone `libodb` via `vyges-opendb-lib` (which sparse-checks-out the
 pinned OpenROAD subtree and builds it — see that crate for details). Deps: a C++20 compiler +
 `cmake boost zlib abseil spdlog fmt`.
 
 ## Status
 
 Read + ECO write path over the db core (v0). LEF/DEF/GDS I/O and richer traversal follow the
-`vyges-odb-sys` roadmap. OpenROAD is BSD-3-Clause; this crate is Apache-2.0 (see NOTICE).
+`vyges-opendb-lib` roadmap. OpenROAD is BSD-3-Clause; this crate is Apache-2.0 (see NOTICE).

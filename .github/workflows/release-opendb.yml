@@ -1,18 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
-# Release the `vyges-openroad` CLI (the `vyges install openroad` component).
+# Release the `vyges-opendb` CLI (the `vyges install opendb` component).
 #
 # Unix-only, native per-target (the binary statically links libodb, a C++ lib — no cross).
-# Produces vyges-openroad-<rust-triple>.tar.gz assets whose names + contents match what the
-# vyges CLI expects: install_one() fetches `vyges-openroad-<target>.tar.gz` from
-# github.com/vyges-tools/odb/releases/latest/download/ and extracts a `vyges-openroad` binary.
+# Produces vyges-opendb-<rust-triple>.tar.gz assets whose names + contents match what the
+# vyges CLI expects: install_one() fetches `vyges-opendb-<target>.tar.gz` from
+# github.com/vyges-tools/opendb/releases/latest/download/ and extracts a `vyges-opendb` binary.
 #
-# This repo's Cargo.toml [patch]es vyges-odb-sys to the sibling ../vyges-tools-odb-sys for local
+# This repo's Cargo.toml [patch]es vyges-opendb-lib to the sibling ../vyges-tools-opendb-lib for local
 # dev, so CI checks BOTH repos out as siblings under the workspace to satisfy that path (building
 # against odb-sys @ main == the git dep it would otherwise use).
 #
 # Trigger: push a tag `v*` (publishes a Release with all four assets), or run manually to
 # smoke the build (workflow_dispatch uploads artifacts only, no Release).
-name: release-openroad
+name: release-opendb
 
 on:
   push:
@@ -28,7 +28,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        working-directory: vyges-tools-odb   # the odb checkout (sibling layout below)
+        working-directory: vyges-tools-opendb   # the opendb checkout (sibling layout below)
     strategy:
       fail-fast: false
       matrix:
@@ -40,15 +40,15 @@ jobs:
           - { os: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu }
           - { os: macos-15,         target: aarch64-apple-darwin      }
     steps:
-      # Sibling layout: <ws>/vyges-tools-odb + <ws>/vyges-tools-odb-sys, so Cargo.toml's
-      # `[patch] vyges-odb-sys = { path = "../vyges-tools-odb-sys" }` resolves on CI.
+      # Sibling layout: <ws>/vyges-tools-opendb + <ws>/vyges-tools-opendb-lib, so Cargo.toml's
+      # `[patch] vyges-opendb-lib = { path = "../vyges-tools-opendb-lib" }` resolves on CI.
       - uses: actions/checkout@v4
         with:
-          path: vyges-tools-odb
+          path: vyges-tools-opendb
       - uses: actions/checkout@v4
         with:
-          repository: vyges-tools/odb-sys
-          path: vyges-tools-odb-sys
+          repository: vyges-tools/opendb-lib
+          path: vyges-tools-opendb-lib
 
       - name: Toolchain (Linux)
         if: runner.os == 'Linux'
@@ -67,18 +67,18 @@ jobs:
 
       - name: Build (release; libodb built from source, static)
         # No --locked: Cargo.lock is gitignored in this repo, and the [patch] resolves
-        # vyges-odb-sys to the freshly-checked-out odb-sys@main sibling — let Cargo resolve.
-        run: cargo build --release --bin vyges-openroad
+        # vyges-opendb-lib to the freshly-checked-out opendb-lib@main sibling — let Cargo resolve.
+        run: cargo build --release --bin vyges-opendb
 
-      - name: Package vyges-openroad-${{ matrix.target }}.tar.gz
+      - name: Package vyges-opendb-${{ matrix.target }}.tar.gz
         id: pkg
         run: |
           set -eu
-          NAME="vyges-openroad-${{ matrix.target }}"
+          NAME="vyges-opendb-${{ matrix.target }}"
           STAGE="$RUNNER_TEMP/$NAME"
           mkdir -p "$STAGE"
-          cp target/release/vyges-openroad "$STAGE/"
-          strip "$STAGE/vyges-openroad" 2>/dev/null || strip -x "$STAGE/vyges-openroad" || true
+          cp target/release/vyges-opendb "$STAGE/"
+          strip "$STAGE/vyges-opendb" 2>/dev/null || strip -x "$STAGE/vyges-opendb" || true
           cp LICENSE NOTICE README.md "$STAGE/" 2>/dev/null || true
           cp THIRD_PARTY_LICENSES.md "$STAGE/" 2>/dev/null || true
           tar -C "$RUNNER_TEMP" -czf "$GITHUB_WORKSPACE/$NAME.tar.gz" "$NAME"

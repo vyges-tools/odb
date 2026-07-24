@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-//! `vyges-odb` — a safe, ergonomic Rust API over OpenROAD's OpenDB (`libodb`).
+//! `vyges-opendb` — a safe, ergonomic Rust API over OpenROAD's OpenDB (`libodb`).
 //!
-//! Wraps the low-level [`vyges_odb_sys`] FFI: an owned [`Db`] handle, `&self` for reads and
+//! Wraps the low-level [`vyges_opendb_lib`] FFI: an owned [`Db`] handle, `&self` for reads and
 //! `&mut self` for edits (so Rust's borrow checker enforces no read-while-mutate aliasing),
 //! and typed [`Error`]s from the C++ layer. Objects are addressed by name.
 //!
@@ -10,13 +10,13 @@
 //! to the OpenROAD engines separately — this layer only mutates the database.
 
 // The libodb-backed surface (`Db`, `eco`) is unix-only — libodb is not built on non-unix
-// targets. `Error`/`Result` stay cross-platform. See vyges-odb-sys for the rationale.
+// targets. `Error`/`Result` stay cross-platform. See vyges-opendb-lib for the rationale.
 #[cfg(unix)]
 use std::path::Path;
 #[cfg(unix)]
 use cxx::UniquePtr;
 #[cfg(unix)]
-use vyges_odb_sys as sys;
+use vyges_opendb_lib as sys;
 
 #[cfg(unix)]
 pub mod eco;
@@ -72,7 +72,7 @@ impl Db {
     }
 
     fn r(&self) -> &sys::OdbDb {
-        self.inner.as_ref().expect("vyges-odb: null db handle")
+        self.inner.as_ref().expect("vyges-opendb: null db handle")
     }
 
     // ---- read / inspect ------------------------------------------------------

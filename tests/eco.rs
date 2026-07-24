@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-use vyges_odb::Db;
+use vyges_opendb::Db;
 
 const FIXTURE: &str = "tests/fixtures/counter.odb";
 
@@ -49,7 +49,7 @@ fn insert_buffer_end_to_end() {
     assert_eq!(db.net_of("vyges_buf0", &a), driver);
 
     // the edit survives serialization
-    let out = std::env::temp_dir().join("vyges_odb_eco.odb");
+    let out = std::env::temp_dir().join("vyges_opendb_eco.odb");
     db.write(&out).unwrap();
     let db2 = Db::open(&out).unwrap();
     assert_eq!(db2.num_insts(), n0 + 1);
@@ -58,7 +58,7 @@ fn insert_buffer_end_to_end() {
 
 #[test]
 fn insert_eco_buffers_step() {
-    use vyges_odb::eco::{insert_eco_buffers, EcoBuffer};
+    use vyges_opendb::eco::{insert_eco_buffers, EcoBuffer};
     let mut db = Db::open(FIXTURE).unwrap();
     let (n0, m0) = (db.num_insts(), db.num_nets());
     let buf = db.find_master("buf");
