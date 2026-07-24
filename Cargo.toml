@@ -14,9 +14,11 @@ cxx = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
+# The one binary shipped by `vyges install openroad`. Subcommands (info, insert-eco-buffers)
+# live inside it; Loom steps invoke `vyges-openroad insert-eco-buffers ...`.
 [[bin]]
-name = "insert-eco-buffers"
-path = "src/bin/insert-eco-buffers.rs"
+name = "vyges-openroad"
+path = "src/bin/vyges-openroad.rs"
 
 # Local dev: build against the sibling checkout instead of the git version. Ignored by
 # downstream consumers (patches are only honored from the root/workspace manifest).

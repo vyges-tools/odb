@@ -1,0 +1,85 @@
+# SPDX-License-Identifier: Apache-2.0
+# Release the `vyges-openroad` CLI (the `vyges install openroad` component).
+#
+# Unix-only, native per-target (the binary statically links libodb, a C++ lib — no cross).
+# Produces vyges-openroad-<rust-triple>.tar.gz assets whose names + contents match what the
+# vyges CLI expects: install_one() fetches `vyges-openroad-<target>.tar.gz` from
+# github.com/vyges-tools/odb/releases/latest/download/ and extracts a `vyges-openroad` binary.
+#
+# Trigger: push a tag `v*` (publishes a Release with all four assets), or run manually to
+# smoke the build (workflow_dispatch uploads artifacts only, no Release).
+name: release-openroad
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # create the Release + upload assets on a tag
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest,    target: x86_64-unknown-linux-gnu  }
+          - { os: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu }
+          - { os: macos-14,         target: aarch64-apple-darwin      }
+          - { os: macos-13,         target: x86_64-apple-darwin       }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain (Linux)
+        if: runner.os == 'Linux'
+        # Boost (headers) + zlib only; fmt/spdlog/abseil are built from source by libodb's build.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ git libboost-dev zlib1g-dev
+
+      - name: Toolchain (macOS)
+        if: runner.os == 'macOS'
+        run: brew install cmake boost
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build (release; libodb built from source, static)
+        run: cargo build --release --locked --bin vyges-openroad
+
+      - name: Package vyges-openroad-${{ matrix.target }}.tar.gz
+        id: pkg
+        run: |
+          set -eu
+          NAME="vyges-openroad-${{ matrix.target }}"
+          STAGE="dist/$NAME"
+          mkdir -p "$STAGE"
+          cp target/release/vyges-openroad "$STAGE/"
+          strip "$STAGE/vyges-openroad" 2>/dev/null || strip -x "$STAGE/vyges-openroad" || true
+          cp LICENSE NOTICE README.md "$STAGE/" 2>/dev/null || true
+          cp THIRD_PARTY_LICENSES.md "$STAGE/" 2>/dev/null || true
+          tar -C dist -czf "$NAME.tar.gz" "$NAME"
+          shasum -a 256 "$NAME.tar.gz" > "$NAME.tar.gz.sha256"
+          echo "asset=$NAME.tar.gz" >> "$GITHUB_OUTPUT"
+          echo "--- $NAME.tar.gz ---"; tar -tzf "$NAME.tar.gz"; cat "$NAME.tar.gz.sha256"
+
+      - name: Upload build artifact (always)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.pkg.outputs.asset }}
+          path: |
+            ${{ steps.pkg.outputs.asset }}
+            ${{ steps.pkg.outputs.asset }}.sha256
+          if-no-files-found: error
+
+      - name: Attach to Release (tags only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ steps.pkg.outputs.asset }}
+            ${{ steps.pkg.outputs.asset }}.sha256
