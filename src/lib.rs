@@ -276,3 +276,7 @@ impl Db {
 // Machine-generated read accessors (scripts/generate-bindings.py) — a second `impl Db` block.
 #[cfg(unix)]
 include!("generated_api.rs");
+
+// Machine-generated setters — a third `impl Db` block, gated behind `gen-write` (L2/write).
+#[cfg(all(unix, feature = "gen-write"))]
+include!("generated_write_api.rs");

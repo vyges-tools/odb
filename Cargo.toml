@@ -6,6 +6,10 @@ license = "Apache-2.0"
 description = "Safe, ergonomic Rust API for OpenROAD's OpenDB (libodb) — read + ECO write path."
 repository = "https://github.com/vyges-tools/opendb"
 
+[features]
+# L2/governance-gated generated setter surface — forwards to the lib crate's feature.
+gen-write = ["vyges-opendb-lib/gen-write"]
+
 [dependencies]
 # git so external consumers (e.g. vyges-cli) can pull this crate directly; the [patch]
 # below redirects to the sibling checkout for local development.
