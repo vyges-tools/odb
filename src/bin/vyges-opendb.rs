@@ -68,6 +68,12 @@ commands:
   write-def                 --input <f.odb> --output <f.def>
                       Export the design to a DEF 5.8 file (libodb v1 LEF/DEF I/O).
 
+  read-def                  --input <in.odb> --def <f.def> --output <out.odb>
+                      Import a DEF into the design (libodb v1 LEF/DEF I/O).
+
+  apply-def-template        --input <in.odb> --template <f.def> --output <out.odb>
+                      Apply a template DEF's floorplan (Odb.ApplyDEFTemplate).
+
   --version, -V       Print the version.
   --help,    -h       Print this help.
 ";
@@ -98,6 +104,8 @@ fn run() -> Result<(), Fail> {
         "report-wire-length" => report_wire_length(args),
         "custom-io-placement" => custom_io_placement(args),
         "write-def" => write_def(args),
+        "read-def" => read_def(args),
+        "apply-def-template" => apply_def_template(args),
         "-V" | "--version" => {
             println!("vyges-opendb {}", env!("CARGO_PKG_VERSION"));
             Ok(())
@@ -835,5 +843,87 @@ fn write_def(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
     let output = output.ok_or("write-def: --output <f.def> required")?;
     Db::open(&input)?.write_def(&output)?;
     eprintln!("write-def: {input} -> {output}");
+    Ok(())
+}
+
+const READ_DEF_DESCRIBE: &str = r#"{
+  "step": "read-def",
+  "summary": "Import a DEF into an existing design (its tech/libs) — libodb v1 LEF/DEF I/O.",
+  "librelane_equivalent": "odb read_def",
+  "unix_only": true,
+  "args": [
+    { "name": "--input",  "kind": "input",  "type": "path", "required": true, "description": "input .odb (provides tech + libs)" },
+    { "name": "--def",    "kind": "input",  "type": "path", "required": true, "description": "DEF file to import" },
+    { "name": "--output", "kind": "output", "type": "path", "required": true, "description": "output .odb" }
+  ]
+}"#;
+
+/// `read-def --input <in.odb> --def <f.def> --output <out.odb> | --describe`.
+fn read_def(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
+    let (mut input, mut def, mut output) = (None, None, None);
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--input" | "-i" => input = args.next(),
+            "--def" => def = args.next(),
+            "--output" | "-o" => output = args.next(),
+            "--describe" => {
+                println!("{READ_DEF_DESCRIBE}");
+                return Ok(());
+            }
+            "-h" | "--help" => {
+                eprintln!("usage: vyges-opendb read-def --input <in.odb> --def <f.def> --output <out.odb>");
+                return Ok(());
+            }
+            other => return Err(format!("read-def: unknown argument: {other}").into()),
+        }
+    }
+    let input = input.ok_or("read-def: --input <in.odb> required")?;
+    let def = def.ok_or("read-def: --def <f.def> required")?;
+    let output = output.ok_or("read-def: --output <out.odb> required")?;
+    let mut db = Db::open(&input)?;
+    db.read_def(&def, "default")?;
+    db.write(&output)?;
+    eprintln!("read-def: {input} + {def} -> {output}");
+    Ok(())
+}
+
+const APPLY_DEF_TEMPLATE_DESCRIBE: &str = r#"{
+  "step": "apply-def-template",
+  "summary": "Apply a template DEF's floorplan (DIEAREA/TRACKS/ROWS/COMPONENTS/PINS) to a design.",
+  "librelane_equivalent": "Odb.ApplyDEFTemplate",
+  "unix_only": true,
+  "args": [
+    { "name": "--input",    "kind": "input",  "type": "path", "required": true, "description": "input .odb design" },
+    { "name": "--template", "kind": "input",  "type": "path", "required": true, "description": "template DEF (floorplan)" },
+    { "name": "--output",   "kind": "output", "type": "path", "required": true, "description": "output .odb" }
+  ]
+}"#;
+
+/// `apply-def-template --input <in.odb> --template <f.def> --output <out.odb> | --describe`.
+fn apply_def_template(mut args: impl Iterator<Item = String>) -> Result<(), Fail> {
+    let (mut input, mut template, mut output) = (None, None, None);
+    while let Some(a) = args.next() {
+        match a.as_str() {
+            "--input" | "-i" => input = args.next(),
+            "--template" => template = args.next(),
+            "--output" | "-o" => output = args.next(),
+            "--describe" => {
+                println!("{APPLY_DEF_TEMPLATE_DESCRIBE}");
+                return Ok(());
+            }
+            "-h" | "--help" => {
+                eprintln!("usage: vyges-opendb apply-def-template --input <in.odb> --template <f.def> --output <out.odb>");
+                return Ok(());
+            }
+            other => return Err(format!("apply-def-template: unknown argument: {other}").into()),
+        }
+    }
+    let input = input.ok_or("apply-def-template: --input <in.odb> required")?;
+    let template = template.ok_or("apply-def-template: --template <f.def> required")?;
+    let output = output.ok_or("apply-def-template: --output <out.odb> required")?;
+    let mut db = Db::open(&input)?;
+    db.read_def(&template, "floorplan")?;
+    db.write(&output)?;
+    eprintln!("apply-def-template: {input} + {template} -> {output}");
     Ok(())
 }

@@ -187,6 +187,29 @@ fn write_def_exports_the_design() {
 }
 
 #[test]
+fn write_def_then_apply_floorplan_template() {
+    let db = Db::open(FIXTURE).unwrap();
+    let (n0, m0) = (db.num_insts(), db.num_nets());
+    // write-def produces a full DEF (round-trips the design to text)
+    let def = std::env::temp_dir().join("vyges_opendb_rt.def");
+    db.write_def(&def).unwrap();
+    assert!(std::fs::read_to_string(&def).unwrap().contains("DESIGN counter"));
+
+    // apply-def-template applies a floorplan *skeleton* (die area here) via FLOORPLAN mode —
+    // it updates the floorplan and leaves components/nets intact.
+    let tmpl = std::env::temp_dir().join("vyges_opendb_tmpl.def");
+    std::fs::write(
+        &tmpl,
+        "VERSION 5.8 ;\nDESIGN counter ;\nUNITS DISTANCE MICRONS 1000 ;\nDIEAREA ( 0 0 ) ( 200000 200000 ) ;\nEND DESIGN\n",
+    )
+    .unwrap();
+    let mut db2 = Db::open(FIXTURE).unwrap();
+    db2.read_def(&tmpl, "floorplan").unwrap();
+    assert_eq!(db2.num_insts(), n0);
+    assert_eq!(db2.num_nets(), m0);
+}
+
+#[test]
 fn errors_are_typed() {
     let mut db = Db::open(FIXTURE).unwrap();
     assert!(db.create_inst("no_such_master", "x").is_err());

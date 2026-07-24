@@ -78,6 +78,13 @@ impl Db {
         Ok(sys::write_def(self.r(), &path_str(path)?)?)
     }
 
+    /// Import a DEF into the design. `mode`: `"default"` (design from scratch), `"floorplan"`
+    /// (`Odb.ApplyDEFTemplate` — update DIEAREA/TRACKS/ROWS/COMPONENTS/PINS/NETS from a template),
+    /// or `"incremental"` (COMPONENTS/PINS only). Non-default modes need an existing design + libs.
+    pub fn read_def(&mut self, def_path: impl AsRef<Path>, mode: &str) -> Result<()> {
+        Ok(sys::read_def(self.r(), &path_str(def_path)?, mode)?)
+    }
+
     fn r(&self) -> &sys::OdbDb {
         self.inner.as_ref().expect("vyges-opendb: null db handle")
     }
